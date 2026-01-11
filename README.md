@@ -1,43 +1,53 @@
 # AWSKit - Python AWS Integration Toolkit
 
-A Pythonic, Spring-inspired toolkit for AWS services that simplifies integration with AWS. This library provides decorator-based patterns, automatic conversion, flexible configuration strategies, and comprehensive error handling - making it easy to build robust cloud-native applications.
+A Pythonic, Spring-inspired toolkit for AWS services that simplifies cloud-native application development. Built with decorator-based patterns, automatic lifecycle management, and comprehensive observability.
+
+[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## Currently Supported Services
 
-- **SQS (Simple Queue Service)** - Full-featured message queue integration
+- **Amazon SQS** - Full-featured message queue integration with FIFO support
 
-## Features
+## Key Features
 
-- **🎯 Decorator-based patterns**: Define listeners and handlers using simple Python decorators
-- **🚀 Automatic container management**: Just call `start_listeners()` - threading, polling, and lifecycle are handled automatically (like Spring Cloud AWS)
-- **🔄 Automatic message conversion**: Seamless serialization/deserialization of Python objects (dataclasses, Pydantic models, dicts)
-- **✅ Flexible acknowledgement strategies**: Control when messages are deleted from queues (on success, always, or manual)
-- **📋 FIFO queue support**: First-class support for FIFO queues with message ordering and exactly-once processing
-- **⚡ Backpressure management**: Automatic polling rate control based on processing capacity to prevent overload
-- **🛡️ Comprehensive error handling**: Robust error handling with custom error handlers and exponential backoff
-- **📊 Observability**: Built-in metrics collection with Prometheus and StatsD support, structured logging
-- **🔧 Type hints**: Full type hint support for better IDE integration and type safety
-- **🧪 Comprehensive testing**: Full test coverage with support for LocalStack integration testing
+### Core Capabilities
+- **Decorator-Based Patterns** - Define message listeners with simple `@sqs_listener` decorators
+- **Automatic Lifecycle Management** - Container, threading, and polling handled automatically
+- **Smart Message Conversion** - Seamless serialization/deserialization (dataclasses, Pydantic, dicts)
+- **Flexible Acknowledgement** - Control message deletion: on success, always, or manual
+- **FIFO Queue Support** - Message ordering and exactly-once processing guaranteed
+
+### Advanced Features
+- **Intelligent Backpressure** - Automatic polling rate control prevents system overload
+- **Robust Error Handling** - Custom error handlers with exponential backoff retry
+- **Built-in Observability** - Prometheus/StatsD metrics + structured logging (structlog)
+- **Full Type Safety** - Complete type hints for excellent IDE support
+- **Testing Ready** - LocalStack integration for local development and testing
 
 ## Installation
 
-Install from PyPI:
-
 ```bash
+# Basic installation
 pip install awskit
-```
 
-For metrics support (Prometheus/StatsD):
-
-```bash
+# With metrics support (Prometheus/StatsD)
 pip install awskit[metrics]
+
+# With all optional dependencies
+pip install awskit[all]
 ```
+
+**Requirements:**
+- Python 3.9+
+- boto3 >= 1.26.0
+- structlog >= 23.1.0
 
 ## Quick Start
 
-### Basic SQS Message Receiving (Automatic Container Management)
+### Receiving Messages (Automatic Mode)
 
-The simplest way to start processing SQS messages - just define your listener and call `start_listeners()`:
+The simplest way to process SQS messages - just define listeners and call `start_listeners()`:
 
 ```python
 import boto3
@@ -48,126 +58,87 @@ from dataclasses import dataclass
 class Order:
     order_id: int
     amount: float
+    customer_id: str
 
-# Just define your listener - threading is handled automatically!
+# Define your listener - threading handled automatically!
 @sqs_listener("orders-queue", max_concurrent_messages=5)
-def process_order(message: Order):
-    """Process incoming orders."""
-    print(f"Processing order {message.order_id} for ${message.amount}")
+def process_order(order: Order):
+    print(f"Processing order {order.order_id} for ${order.amount}")
     # Your business logic here
 
-# Start all listeners with one line - container, threads, and polling are automatic
+# Start processing with one line
 client = boto3.client('sqs', region_name='us-east-1')
 start_listeners(client)
 ```
 
-**That's it!** The library automatically:
-- Creates the message listener container
-- Sets up thread pools for concurrent processing
-- Starts polling threads for each queue
-- Manages all threading and lifecycle
+**That's it!** The library automatically handles:
+- Message listener container creation
+- Thread pool management
+- Polling threads for each queue
+- Message deserialization
+- Graceful shutdown
 
-> **Multiple listeners?** Yes! Define as many `@sqs_listener` functions as you need for different queues. A single `start_listeners()` call starts them all. See [Multiple Listeners Guide](MULTIPLE_LISTENERS.md).
+### Sending Messages
 
-> **Migrating from manual container management?** See the [Migration Guide](MIGRATION_GUIDE.md) for a smooth transition.
-
-### Basic Message Sending
-
-Send messages to SQS queues with automatic serialization:
+Send messages with automatic serialization:
 
 ```python
-import boto3
-from sqs_integration import SqsTemplate, JsonMessageConverter
+from awskit.sqs import SqsTemplate
+from awskit.converter import JsonMessageConverter
 
-# Create SQS client
-client = boto3.client('sqs', region_name='us-east-1')
-
-# Create template with JSON converter
+# Create template
 template = SqsTemplate(
-    client=client,
+    client=boto3.client('sqs', region_name='us-east-1'),
     converter=JsonMessageConverter()
 )
 
 # Send a message
 result = template.send(
-    queue="my-queue",
+    queue="orders-queue",
     payload={"order_id": 123, "amount": 99.99}
 )
 print(f"Message sent: {result.message_id}")
 ```
 
+## Usage Examples
+
 ### Multiple Listeners
 
-Define multiple listeners for different queues - they all start with one call:
+Process different queues with independent configurations:
 
 ```python
-from sqs_integration import sqs_listener, start_listeners
+from awskit.sqs import sqs_listener, start_listeners
 
-# Listener 1: Process orders
 @sqs_listener("orders-queue", max_concurrent_messages=10)
-def process_order(message: Order):
-    print(f"Processing order: {message.order_id}")
+def process_order(order: Order):
+    print(f"Processing order: {order.order_id}")
 
-# Listener 2: Process payments
 @sqs_listener("payments-queue", max_concurrent_messages=5)
-def process_payment(message: Payment):
-    print(f"Processing payment: {message.payment_id}")
+def process_payment(payment: Payment):
+    print(f"Processing payment: {payment.payment_id}")
 
-# Listener 3: Send notifications
 @sqs_listener("notifications-queue", max_concurrent_messages=20)
-def send_notification(message: Notification):
-    print(f"Sending notification: {message.type}")
+def send_notification(notification: Notification):
+    print(f"Sending notification: {notification.type}")
 
-# Start ALL listeners with ONE call!
+# Start ALL listeners with ONE call
 client = boto3.client('sqs', region_name='us-east-1')
-start_listeners(client)  # All 3 listeners now running!
-```
-
-Each listener:
-- Has its own polling thread
-- Respects its own concurrency limits
-- Can have different acknowledgement modes
-- Can process different message types
-
-See the [Multiple Listeners Guide](MULTIPLE_LISTENERS.md) for more details.
-
-### Manual Container Management (Advanced)
-
-For advanced use cases, you can manually manage the container:
-
-```python
-from sqs_integration import MessageListenerContainer, JsonMessageConverter
-
-# Manually create and configure the container
-container = MessageListenerContainer(
-    client=client,
-    converter=JsonMessageConverter(),
-    acknowledgement_processor=acknowledgement_processor,
-    backpressure_manager=backpressure_manager
-)
-container.start()
+start_listeners(client)
 ```
 
 ### Manual Acknowledgement
 
-Control exactly when messages are deleted from the queue:
+Control exactly when messages are deleted:
 
 ```python
-from sqs_integration import sqs_listener, AcknowledgementMode, Acknowledgement
+from awskit.sqs import sqs_listener, AcknowledgementMode, Acknowledgement
 
-@sqs_listener(
-    "critical-queue",
-    acknowledgement_mode=AcknowledgementMode.MANUAL
-)
+@sqs_listener("critical-queue", acknowledgement_mode=AcknowledgementMode.MANUAL)
 def process_critical_message(message: dict, ack: Acknowledgement):
-    """Process critical messages with manual acknowledgement."""
     try:
-        # Process the message
         result = process_payment(message)
-        
-        # Only acknowledge if processing succeeded
         if result.success:
-            ack.acknowledge()
+            ack.acknowledge()  # Only acknowledge on success
     except Exception as e:
         # Don't acknowledge - message will be retried
         print(f"Processing failed: {e}")
@@ -175,10 +146,10 @@ def process_critical_message(message: dict, ack: Acknowledgement):
 
 ### FIFO Queue Support
 
-Work with FIFO queues for ordered message processing:
+Process messages in order with FIFO queues:
 
 ```python
-from sqs_integration import sqs_listener, FifoGroupStrategy
+from awskit.sqs import sqs_listener, FifoGroupStrategy
 
 # Send to FIFO queue
 template.send(
@@ -188,71 +159,52 @@ template.send(
     deduplication_id="order-123-v1"
 )
 
-# Listen to FIFO queue
+# Process FIFO messages
 @sqs_listener(
     "orders.fifo",
     message_group_strategy=FifoGroupStrategy.PARALLEL_BATCHES_PER_GROUP
 )
-def process_fifo_order(message: dict):
-    """Process orders in order within each customer group."""
-    print(f"Processing order {message['order_id']}")
+def process_fifo_order(order: dict):
+    print(f"Processing order {order['order_id']} in order")
 ```
 
 ### Batch Processing
 
-Process multiple messages at once for improved throughput:
+Process multiple messages at once:
 
 ```python
 from typing import List
 
-@sqs_listener(
-    "batch-queue",
-    batch=True,
-    max_messages_per_poll=10
-)
+@sqs_listener("batch-queue", batch=True, max_messages_per_poll=10)
 def process_batch(messages: List[dict]):
-    """Process messages in batches."""
     print(f"Processing batch of {len(messages)} messages")
     for message in messages:
         # Process each message
-        pass
+        handle_message(message)
 ```
 
 ### Custom Error Handling
 
-Define custom error handlers for specific queues:
+Define custom error handlers:
 
 ```python
-def handle_processing_error(exception: Exception, message: Any, context: dict):
-    """Custom error handler for failed messages."""
-    print(f"Error processing message {context.get('message_id')}: {exception}")
-    # Send to dead letter queue, log to external service, etc.
+def handle_error(exception: Exception, message: Any, context: dict):
+    print(f"Error processing {context.get('message_id')}: {exception}")
+    # Send to DLQ, log to external service, etc.
 
-@sqs_listener(
-    "my-queue",
-    error_handler=handle_processing_error
-)
+@sqs_listener("my-queue", error_handler=handle_error)
 def process_message(message: dict):
-    """Process messages with custom error handling."""
     # Your processing logic
-    pass
+    process_data(message)
 ```
 
-### Configuration
+## Configuration
 
-Configure the library using Python objects or environment variables:
+### Python Configuration
 
 ```python
-from sqs_integration import (
-    SqsConfig,
-    TemplateConfig,
-    ContainerConfig,
-    AcknowledgementConfig,
-    QueueNotFoundStrategy,
-    BackpressureMode
-)
+from awskit.sqs import SqsConfig, TemplateConfig, ContainerConfig, BackpressureMode
 
-# Create configuration
 config = SqsConfig(
     region="us-east-1",
     template=TemplateConfig(
@@ -268,28 +220,75 @@ config = SqsConfig(
     )
 )
 
-# Or load from environment variables
-from sqs_integration import load_config_from_env
-
-config = load_config_from_env(prefix="SQS_")
+start_listeners(client, config=config)
 ```
 
-Environment variables:
+### Environment Variables
+
 ```bash
 export SQS_REGION=us-east-1
 export SQS_ENDPOINT_URL=http://localhost:4566  # For LocalStack
 export SQS_TEMPLATE_QUEUE_NOT_FOUND_STRATEGY=CREATE
 export SQS_CONTAINER_BACKPRESSURE_MODE=AUTO
+export SQS_ACKNOWLEDGEMENT_INTERVAL_SECONDS=1.0
+```
+
+Load from environment:
+
+```python
+from awskit.sqs import load_config_from_env
+
+config = load_config_from_env(prefix="SQS")
+start_listeners(client, config=config)
+```
+
+## Observability
+
+### Metrics Collection
+
+Built-in support for Prometheus and StatsD:
+
+```python
+from awskit.metrics import PrometheusMetricsCollector, InMemoryMetricsCollector
+
+# Prometheus metrics
+metrics = PrometheusMetricsCollector(namespace="my_app")
+
+# Or in-memory for testing
+metrics = InMemoryMetricsCollector()
+
+start_listeners(client, metrics_collector=metrics)
+```
+
+**Available Metrics:**
+- `messages_received_total` - Total messages received from SQS
+- `messages_processed_total` - Successfully processed messages
+- `messages_failed_total` - Failed message processing attempts
+- `messages_acknowledged_total` - Messages acknowledged (deleted)
+
+### Structured Logging
+
+Built-in structured logging with contextual information:
+
+```python
+import structlog
+
+logger = structlog.get_logger(__name__)
+
+@sqs_listener("orders-queue")
+def process_order(order: Order):
+    logger.info("processing_order", order_id=order.order_id, amount=order.amount)
+    # Logs include: message_id, queue_url, timestamp, etc.
 ```
 
 ## Complete Example
 
-Here's a complete example showing automatic container management:
+Here's a production-ready example:
 
 ```python
 import boto3
 from dataclasses import dataclass
-from sqs_integration import (
+from awskit.sqs import (
     sqs_listener,
     start_listeners,
     stop_listeners,
@@ -299,7 +298,6 @@ from sqs_integration import (
     BackpressureMode,
 )
 
-# Define your message model
 @dataclass
 class OrderMessage:
     order_id: int
@@ -307,33 +305,26 @@ class OrderMessage:
     amount: float
     items: list
 
-# Define listener with decorator - threading is automatic!
 @sqs_listener(
     "orders-queue",
     acknowledgement_mode=AcknowledgementMode.ON_SUCCESS,
     max_concurrent_messages=10
 )
-def process_order(message: OrderMessage):
-    """Process incoming orders."""
-    print(f"Processing order {message.order_id} for customer {message.customer_id}")
-    # Your business logic here
-    calculate_total(message)
-    update_inventory(message.items)
-    send_confirmation(message.customer_id)
+def process_order(order: OrderMessage):
+    print(f"Processing order {order.order_id} for customer {order.customer_id}")
+    calculate_total(order)
+    update_inventory(order.items)
+    send_confirmation(order.customer_id)
 
-# Optional: Create custom configuration
+# Configure and start
 config = SqsConfig(
-    container=ContainerConfig(
-        backpressure_mode=BackpressureMode.AUTO
-    )
+    container=ContainerConfig(backpressure_mode=BackpressureMode.AUTO)
 )
 
-# Start all listeners - container and threading managed automatically
 client = boto3.client('sqs', region_name='us-east-1')
 start_listeners(client, config=config)
 
-# That's it! The container is now running and processing messages
-# Press Ctrl+C to stop gracefully
+# Graceful shutdown
 try:
     import time
     while True:
@@ -343,92 +334,41 @@ except KeyboardInterrupt:
     stop_listeners(timeout_seconds=30)
 ```
 
-### Manual Container Management (Advanced)
-
-For advanced use cases where you need full control:
-
-```python
-from sqs_integration import (
-    MessageListenerContainer,
-    JsonMessageConverter,
-    AcknowledgementProcessor,
-    BackpressureManager,
-    AcknowledgementConfig,
-    ContainerConfig,
-)
-
-# Create components manually
-converter = JsonMessageConverter()
-ack_processor = AcknowledgementProcessor(
-    client=client,
-    config=AcknowledgementConfig(interval_seconds=1.0, threshold=10)
-)
-backpressure_manager = BackpressureManager(mode=BackpressureMode.AUTO)
-
-# Create and start container
-container = MessageListenerContainer(
-    client=client,
-    converter=converter,
-    acknowledgement_processor=ack_processor,
-    backpressure_manager=backpressure_manager,
-    config=ContainerConfig(auto_startup=True)
-)
-
-try:
-    container.start()
-    # Keep running until interrupted
-    import time
-    while True:
-        time.sleep(1)
-except KeyboardInterrupt:
-    print("Shutting down...")
-    container.stop(timeout_seconds=30)
-```
-
 ## Testing
 
-The library includes comprehensive test coverage. You can run the test suite with:
+### Running Tests
 
 ```bash
-pip install python-aws-integration[test]
+# Install with test dependencies
+pip install awskit[test]
+
+# Run test suite
 pytest tests/
+
+# Run with coverage
+pytest --cov=awskit tests/
 ```
 
-For integration testing, use LocalStack to simulate AWS SQS locally:
+### LocalStack Integration
+
+Test with LocalStack for local AWS simulation:
 
 ```python
 import boto3
 
-# Create SQS client connected to LocalStack
+# Connect to LocalStack
 client = boto3.client(
     'sqs',
     region_name='us-east-1',
-    endpoint_url='http://localhost:4566'  # LocalStack endpoint
+    endpoint_url='http://localhost:4566'
 )
 
-# Use the client with SqsTemplate as usual
-from sqs_integration import SqsTemplate, JsonMessageConverter
+# Use with awskit as normal
+from awskit.sqs import SqsTemplate, JsonMessageConverter
 
 template = SqsTemplate(client=client, converter=JsonMessageConverter())
-# Now you can test with LocalStack
+# Test your code locally!
 ```
-
-## Requirements
-
-- Python 3.9 or later
-- boto3 >= 1.26.0
-- typing-extensions >= 4.5.0
-
-## Documentation
-
-This README provides a quick start guide. For detailed documentation:
-
-- **Installation**: `pip install python-aws-integration`
-- **Quick Start**: See examples above
-- **Full API**: All classes and functions are fully documented with docstrings
-- **Type Hints**: The library uses comprehensive type hints for better IDE support
-
-For questions or issues, please open an issue on the GitHub repository.
 
 ## Contributing
 
@@ -436,4 +376,10 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Links
+
+- **PyPI**: https://pypi.org/project/awskit/
+- **Documentation**: Full API documentation available in docstrings
+- **Issues**: Report bugs and request features on GitHub
