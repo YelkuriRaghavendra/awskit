@@ -1,6 +1,9 @@
 name: Publish to PyPI
 
 on:
+  push:
+    tags:
+      - 'v*'
   release:
     types: [published]
   workflow_dispatch:
@@ -80,6 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'release' ||
+      github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' && 
        github.event.inputs.environment == 'pypi')
     environment:
@@ -97,6 +101,32 @@ jobs:
       
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  create-github-release:
+    name: Create GitHub Release
+    needs: publish-to-pypi
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          body: |
+            ## Installation
+            
+            ```bash
+            pip install awskit
+            ```
+            
+            ## What's Changed
+            
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
 
   create-github-release-notes:
     name: Create GitHub Release Notes
