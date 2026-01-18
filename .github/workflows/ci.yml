@@ -22,32 +22,15 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -e ".[dev]" black ruff mypy
       
       - name: Check formatting with black
         run: black --check src/ tests/
       
       - name: Lint with ruff
         run: ruff check src/ tests/
-
-  type-check:
-    name: Type Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: 'pip'
-      
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-      
-      - name: Run mypy
+      - name: Type check with mypy
         run: mypy src/awskit
 
   test:
@@ -82,7 +65,7 @@ jobs:
           file: ./coverage.xml
           fail_ci_if_error: false
 
-  package-check:
+  package:
     name: Package Check (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
@@ -99,10 +82,13 @@ jobs:
       
       - name: Build package
         run: |
-          python -m pip install --upgrade pip build
+          python -m pip install --upgrade pip build twine
           python -m build
       
-      - name: Install and test package
+      - name: Check package
+        run: twine check dist/*
+      
+      - name: Install and verify package
         run: |
           pip install dist/*.whl
           python -c "import awskit; from awskit.sqs import SqsTemplate, sqs_listener"
@@ -111,16 +97,15 @@ jobs:
 
   ci-success:
     name: CI Success
-    needs: [lint, type-check, test, package-check]
+    needs: [lint, test, package]
     runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Check all jobs succeeded
         run: |
           if [[ "${{ needs.lint.result }}" != "success" ]] || \
-             [[ "${{ needs.type-check.result }}" != "success" ]] || \
              [[ "${{ needs.test.result }}" != "success" ]] || \
-             [[ "${{ needs.package-check.result }}" != "success" ]]; then
+             [[ "${{ needs.package.result }}" != "success" ]]; then
             echo "❌ One or more CI jobs failed"
             exit 1
           fi
