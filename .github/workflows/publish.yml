@@ -127,29 +127,3 @@ jobs:
             ## What's Changed
             
             See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
-
-  create-github-release-notes:
-    name: Create GitHub Release Notes
-    needs: publish-to-pypi
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    permissions:
-      contents: write
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Update release notes
-        uses: softprops/action-gh-release@v1
-        with:
-          body: |
-            ## Installation
-            
-            ```bash
-            pip install awskit
-            ```
-            
-            ## What's Changed
-            
-            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
-          append_body: true
