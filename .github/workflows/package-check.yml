@@ -1,0 +1,70 @@
+name: Package Check
+
+on:
+  workflow_call:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-and-test:
+    name: Build & Test Package (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+      
+      - name: Build distribution packages
+        run: |
+          echo "Building wheel and source distribution..."
+          python -m build
+      
+      - name: Check package metadata
+        run: |
+          echo "Checking package with twine..."
+          twine check dist/*
+      
+      - name: Test wheel installation
+        run: |
+          echo "Testing wheel installation..."
+          pip install dist/*.whl
+      
+      - name: Verify package imports
+        run: |
+          echo "Verifying package imports..."
+          python -c "import awskit; print(f'awskit version: {awskit.__version__}')"
+          python -c "from awskit.sqs import SqsTemplate, sqs_listener, start_listeners"
+          python -c "from awskit.converter import JsonMessageConverter, MessageConverter"
+          python -c "from awskit.config import AcknowledgementMode, BackpressureMode, SqsConfig"
+          python -c "from awskit.metrics import MetricsCollector, InMemoryMetricsCollector"
+          python -c "from awskit.exceptions import SqsIntegrationError"
+      
+      - name: Test source distribution
+        run: |
+          echo "Testing source distribution..."
+          pip uninstall -y awskit
+          pip install dist/*.tar.gz
+          python -c "import awskit; from awskit.sqs import SqsTemplate"
+      
+      - name: Upload build artifacts
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-packages
+          path: dist/
+          retention-days: 7

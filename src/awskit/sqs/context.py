@@ -246,8 +246,6 @@ def stop_listeners(timeout_seconds: Optional[int] = None) -> None:
     context = SqsListenerContext.get_instance()
     if context:
         context.stop(timeout_seconds=timeout_seconds)
-    else:
-        logger.warning("No listener context to stop")
 
 
 def get_listener_context() -> Optional[SqsListenerContext]:

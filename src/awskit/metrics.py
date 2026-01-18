@@ -280,11 +280,6 @@ class PrometheusMetricsCollector(MetricsCollector):
             registry=self._registry
         )
 
-        logger.info(
-            "Initialized PrometheusMetricsCollector",
-            namespace=namespace
-        )
-
     def _extract_queue_name(self, queue_url: str) -> str:
         """
         Extract queue name from queue URL for use as label.
@@ -393,13 +388,6 @@ class StatsDMetricsCollector(MetricsCollector):
             maxudpsize=maxudpsize
         )
 
-        logger.info(
-            "Initialized StatsDMetricsCollector",
-            host=host,
-            port=port,
-            prefix=prefix
-        )
-
     def _extract_queue_name(self, queue_url: str) -> str:
         """
         Extract queue name from queue URL for use in metric name.
@@ -484,8 +472,6 @@ class CallbackMetricsCollector(MetricsCollector):
         }
         self._lock = Lock()
 
-        logger.info("Initialized CallbackMetricsCollector")
-
     def register_callback(
         self,
         event: LifecycleEvent,
@@ -500,11 +486,6 @@ class CallbackMetricsCollector(MetricsCollector):
         """
         with self._lock:
             self._callbacks[event].append(callback)
-            logger.info(
-                "Registered callback for event",
-                lifecycle_event=event.value,
-                callback=callback.__name__
-            )
 
     def unregister_callback(
         self,
@@ -521,11 +502,6 @@ class CallbackMetricsCollector(MetricsCollector):
         with self._lock:
             if callback in self._callbacks[event]:
                 self._callbacks[event].remove(callback)
-                logger.info(
-                    "Unregistered callback for event",
-                    lifecycle_event=event.value,
-                    callback=callback.__name__
-                )
 
     def _invoke_callbacks(
         self,

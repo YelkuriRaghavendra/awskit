@@ -133,12 +133,7 @@ class MessageListenerContainer:
                 self._error_counts[queue_url] = 0
                 self._error_locks[queue_url] = threading.Lock()
 
-            logger.info(
-                "Registered listener for queue",
-                listener_name=listener_func.__name__,
-                queue_name=listener_config.queue,
-                queue_url=queue_url,
-            )
+
 
     def _resolve_queue_url(self, queue: str) -> str:
         """
@@ -258,9 +253,7 @@ class MessageListenerContainer:
             logger.warning("Container is already started")
             return
 
-        logger.info("Starting MessageListenerContainer")
 
-        # Create thread pool for message processing
         # Use a reasonable default pool size
         max_workers = sum(
             config.max_concurrent_messages
@@ -290,10 +283,7 @@ class MessageListenerContainer:
             polling_thread.start()
             self._polling_threads.append(polling_thread)
 
-        logger.info(
-            "MessageListenerContainer started",
-            polling_thread_count=len(self._polling_threads),
-        )
+
 
     def stop(self, timeout_seconds: Optional[int] = None) -> None:
         """
@@ -314,9 +304,7 @@ class MessageListenerContainer:
 
         timeout = timeout_seconds or self.config.listener_shutdown_timeout_seconds
 
-        logger.info("Stopping MessageListenerContainer", timeout_seconds=timeout)
 
-        # Signal shutdown
         self._shutdown_event.set()
 
         # Wait for polling threads to finish
@@ -333,7 +321,7 @@ class MessageListenerContainer:
         # Flush pending acknowledgements
         self.acknowledgement_processor.flush()
 
-        logger.info("MessageListenerContainer stopped")
+
 
     def _calculate_backoff_delay(self, queue_url: str) -> float:
         """
@@ -397,7 +385,6 @@ class MessageListenerContainer:
             queue_url: The URL of the queue to poll
             config: The listener configuration for this queue
         """
-        logger.info("Starting poll loop for queue", queue_url=queue_url)
 
         while not self._shutdown_event.is_set():
             try:
@@ -440,7 +427,7 @@ class MessageListenerContainer:
                 backoff_delay = self._calculate_backoff_delay(queue_url)
                 self._shutdown_event.wait(backoff_delay)
 
-        logger.info("Poll loop stopped for queue", queue_url=queue_url)
+
 
     def _poll_queue(self, queue_url: str, config: ListenerConfig) -> None:
         """
@@ -568,28 +555,8 @@ class MessageListenerContainer:
                         raw_message, queue_url, listener_func
                     )
 
-                    # Log message receipt with full context
-                    log.info(
-                        "Message received from queue",
-                        listener_name=listener_func.__name__,
-                        message_group_id=message_group_id if is_fifo else None,
-                        is_fifo=is_fifo,
-                    )
-
-                    # Log processing start
-                    log.info(
-                        "Processing message with listener",
-                        listener_name=listener_func.__name__,
-                    )
-
                     # Invoke listener
                     self._invoke_listener(listener_func, message, listener_config)
-
-                    # Log processing completion
-                    log.info(
-                        "Message processing completed successfully",
-                        listener_name=listener_func.__name__,
-                    )
 
                 except Exception as e:
                     log.exception(

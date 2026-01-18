@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "awskit"
-version = "0.1.0"
+version = "1.0.0"
 description = "A Pythonic, Spring-inspired toolkit for AWS services with decorator-based patterns, automatic message conversion, and flexible configuration strategies"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -102,3 +102,14 @@ markers = [
     "integration: Integration tests",
     "property: Property-based tests",
 ]
+
+[tool.bumpversion]
+current_version = "1.0.0"
+commit = true
+tag = true
+tag_name = "v{new_version}"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""

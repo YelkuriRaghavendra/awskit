@@ -158,7 +158,6 @@ class AcknowledgementProcessor:
         Args:
             timeout_seconds: Maximum time to wait for shutdown
         """
-        logger.info("Shutting down acknowledgement processor")
         self._shutdown_event.set()
 
         # Flush pending acknowledgements
@@ -172,8 +171,6 @@ class AcknowledgementProcessor:
                     "Acknowledgement processor worker thread did not stop within timeout",
                     timeout_seconds=timeout_seconds,
                 )
-
-        logger.info("Acknowledgement processor shutdown complete")
 
     def _process_acknowledgements(self) -> None:
         """

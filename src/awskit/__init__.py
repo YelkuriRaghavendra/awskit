@@ -14,7 +14,11 @@ Future services:
 - And more...
 """
 
-__version__ = "0.2.0"
+try:
+    from importlib.metadata import version
+    __version__ = version("awskit")
+except Exception:
+    __version__ = "0.0.1"
 
 # Configure structlog before any other imports
 from awskit.logging_config import configure_structlog

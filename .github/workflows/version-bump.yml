@@ -1,0 +1,88 @@
+name: Version Bump and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  bump-version:
+    name: Bump Version and Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install bump2version
+      
+      - name: Configure git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+      
+      - name: Get current version
+        id: current_version
+        run: |
+          VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Bump version
+        id: bump
+        run: |
+          bump2version ${{ github.event.inputs.version_type }} \
+            --config-file pyproject.toml \
+            --allow-dirty
+          
+          NEW_VERSION=$(grep '^version = ' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Commit version bump
+        run: |
+          git add pyproject.toml
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }}"
+      
+      - name: Create tag
+        run: |
+          git tag -a "v${{ steps.bump.outputs.new_version }}" -m "Release v${{ steps.bump.outputs.new_version }}"
+      
+      - name: Push changes and tag
+        run: |
+          git push origin main
+          git push origin "v${{ steps.bump.outputs.new_version }}"
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "v${{ steps.bump.outputs.new_version }}"
+          body: |
+            ## Version ${{ steps.bump.outputs.new_version }}
+            
+            ### Changes
+            - Bumped from ${{ steps.current_version.outputs.version }} to ${{ steps.bump.outputs.new_version }}
+            
+            ### Installation
+            ```bash
+            pip install awskit==${{ steps.bump.outputs.new_version }}
+            ```
+          draft: false
+          prerelease: false
