@@ -316,9 +316,7 @@ class TestSqsTemplate:
                     "ReceiptHandle": "handle-1",
                     "Body": '{"id": 1, "message": "test"}',
                     "Attributes": {},
-                    "MessageAttributes": {
-                        "__type__": {"StringValue": "test.TestPayload"}
-                    },
+                    "MessageAttributes": {"__type__": {"StringValue": "test.TestPayload"}},
                 }
             ]
         }

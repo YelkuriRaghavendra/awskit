@@ -150,9 +150,7 @@ class TestSqsListenerDecorator:
     def test_decorator_with_poll_settings(self):
         """Test decorator with custom poll settings."""
 
-        @sqs_listener(
-            "test-queue", max_messages_per_poll=20, poll_timeout_seconds=15
-        )
+        @sqs_listener("test-queue", max_messages_per_poll=20, poll_timeout_seconds=15)
         def my_listener(message: str):
             pass
 
@@ -191,10 +189,7 @@ class TestSqsListenerDecorator:
             pass
 
         config = ListenerRegistry.get_listener_config(my_listener)
-        assert (
-            config.message_group_strategy
-            == FifoGroupStrategy.PARALLEL_BATCHES_PER_GROUP
-        )
+        assert config.message_group_strategy == FifoGroupStrategy.PARALLEL_BATCHES_PER_GROUP
 
     def test_decorator_with_all_options(self):
         """Test decorator with all configuration options."""

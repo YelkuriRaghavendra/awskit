@@ -67,9 +67,7 @@ class TestAcknowledgementProcessor:
         config = AcknowledgementConfig(interval_seconds=10.0, threshold=10)
         processor = AcknowledgementProcessor(client, config)
 
-        processor.acknowledge_batch(
-            "https://queue.url", ["receipt-1", "receipt-2", "receipt-3"]
-        )
+        processor.acknowledge_batch("https://queue.url", ["receipt-1", "receipt-2", "receipt-3"])
 
         # Should call delete_message_batch immediately
         client.delete_message_batch.assert_called_once()

@@ -107,9 +107,7 @@ class SqsTemplate:
         queue_url = self._resolve_queue_url(queue)
         is_fifo = queue_url.endswith(".fifo")
         if is_fifo and not message_group_id:
-            raise ValueError(
-                f"message_group_id is required for FIFO queue: {queue}"
-            )
+            raise ValueError(f"message_group_id is required for FIFO queue: {queue}")
         body, type_attrs = self.converter.serialize(payload)
         attrs = self._build_message_attributes(type_attrs, message_attributes)
         send_params: Dict[str, Any] = {
@@ -214,9 +212,7 @@ class SqsTemplate:
             body, type_attrs = self.converter.serialize(payload)
 
             # Build message attributes
-            attrs = self._build_message_attributes(
-                type_attrs, kwargs.get("message_attributes")
-            )
+            attrs = self._build_message_attributes(type_attrs, kwargs.get("message_attributes"))
 
             # Build entry
             entry: Dict[str, Any] = {
@@ -234,9 +230,7 @@ class SqsTemplate:
                 # For FIFO, each message needs a group ID
                 message_group_id = kwargs.get("message_group_id")
                 if not message_group_id:
-                    raise ValueError(
-                        f"message_group_id is required for FIFO queue: {queue}"
-                    )
+                    raise ValueError(f"message_group_id is required for FIFO queue: {queue}")
                 entry["MessageGroupId"] = message_group_id
 
                 # Optional deduplication ID
@@ -246,9 +240,7 @@ class SqsTemplate:
             entries.append(entry)
 
         # Send batch
-        response = self.client.send_message_batch(
-            QueueUrl=queue_url, Entries=entries
-        )
+        response = self.client.send_message_batch(QueueUrl=queue_url, Entries=entries)
 
         # Process results
         successful = [
@@ -301,9 +293,7 @@ class SqsTemplate:
             )
 
         if failed and self.config.send_batch_failure_strategy == SendBatchFailureStrategy.THROW:
-            raise SerializationError(
-                f"Batch send failed for {len(failed)} message(s): {failed}"
-            )
+            raise SerializationError(f"Batch send failed for {len(failed)} message(s): {failed}")
         return result
 
     def receive(
@@ -348,9 +338,7 @@ class SqsTemplate:
                 if key.startswith("__"):
                     type_info[key] = value.get("StringValue", "")
             try:
-                body = self.converter.deserialize(
-                    msg["Body"], type_info, dict
-                )
+                body = self.converter.deserialize(msg["Body"], type_info, dict)
             except Exception:
                 body = msg["Body"]
             messages.append(

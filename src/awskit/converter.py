@@ -170,9 +170,7 @@ class JsonMessageConverter(MessageConverter):
                 body_preview=body[:100],
                 exc_info=True,
             )
-            raise DeserializationError(
-                f"Failed to parse JSON body: {e}. Body: {body[:100]}"
-            ) from e
+            raise DeserializationError(f"Failed to parse JSON body: {e}. Body: {body[:100]}") from e
         except (TypeError, ValueError) as e:
             logger.error(
                 "Failed to deserialize",

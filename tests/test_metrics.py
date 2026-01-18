@@ -304,9 +304,10 @@ class TestPrometheusMetricsCollector:
 
     def test_import_error_when_prometheus_client_not_installed(self):
         """Test that ImportError is raised when prometheus_client is not available."""
-        with patch.dict('sys.modules', {'prometheus_client': None}):
+        with patch.dict("sys.modules", {"prometheus_client": None}):
             with pytest.raises(ImportError) as exc_info:
                 from awskit.metrics import PrometheusMetricsCollector
+
                 PrometheusMetricsCollector()
 
             assert "prometheus_client is required" in str(exc_info.value)
@@ -363,8 +364,10 @@ class TestPrometheusMetricsCollector:
             if metric.name == "sqs_integration_messages_received":
                 for sample in metric.samples:
                     # Check the _total sample, not _created
-                    if (sample.name.endswith("_total") and
-                        sample.labels.get("queue_name") == "test-queue"):
+                    if (
+                        sample.name.endswith("_total")
+                        and sample.labels.get("queue_name") == "test-queue"
+                    ):
                         assert sample.value == 5.0
 
     def test_increment_processed(self):
@@ -384,8 +387,10 @@ class TestPrometheusMetricsCollector:
         for metric in registry.collect():
             if metric.name == "sqs_integration_messages_processed":
                 for sample in metric.samples:
-                    if (sample.name.endswith("_total") and
-                        sample.labels.get("queue_name") == "test-queue"):
+                    if (
+                        sample.name.endswith("_total")
+                        and sample.labels.get("queue_name") == "test-queue"
+                    ):
                         assert sample.value == 3.0
 
     def test_increment_failed(self):
@@ -405,8 +410,10 @@ class TestPrometheusMetricsCollector:
         for metric in registry.collect():
             if metric.name == "sqs_integration_messages_failed":
                 for sample in metric.samples:
-                    if (sample.name.endswith("_total") and
-                        sample.labels.get("queue_name") == "test-queue"):
+                    if (
+                        sample.name.endswith("_total")
+                        and sample.labels.get("queue_name") == "test-queue"
+                    ):
                         assert sample.value == 2.0
 
     def test_increment_acknowledged(self):
@@ -426,8 +433,10 @@ class TestPrometheusMetricsCollector:
         for metric in registry.collect():
             if metric.name == "sqs_integration_messages_acknowledged":
                 for sample in metric.samples:
-                    if (sample.name.endswith("_total") and
-                        sample.labels.get("queue_name") == "test-queue"):
+                    if (
+                        sample.name.endswith("_total")
+                        and sample.labels.get("queue_name") == "test-queue"
+                    ):
                         assert sample.value == 4.0
 
     def test_multiple_increments_accumulate(self):
@@ -448,8 +457,10 @@ class TestPrometheusMetricsCollector:
         for metric in registry.collect():
             if metric.name == "sqs_integration_messages_received":
                 for sample in metric.samples:
-                    if (sample.name.endswith("_total") and
-                        sample.labels.get("queue_name") == "test-queue"):
+                    if (
+                        sample.name.endswith("_total")
+                        and sample.labels.get("queue_name") == "test-queue"
+                    ):
                         assert sample.value == 15.0
 
     def test_multiple_queues_tracked_separately(self):
@@ -524,9 +535,10 @@ class TestStatsDMetricsCollector:
 
     def test_import_error_when_statsd_not_installed(self):
         """Test that ImportError is raised when statsd is not available."""
-        with patch.dict('sys.modules', {'statsd': None}):
+        with patch.dict("sys.modules", {"statsd": None}):
             with pytest.raises(ImportError) as exc_info:
                 from awskit.metrics import StatsDMetricsCollector
+
                 StatsDMetricsCollector()
 
             assert "statsd is required" in str(exc_info.value)
@@ -536,14 +548,11 @@ class TestStatsDMetricsCollector:
         pytest.importorskip("statsd")
         from awskit.metrics import StatsDMetricsCollector
 
-        with patch('statsd.StatsClient') as mock_client:
+        with patch("statsd.StatsClient") as mock_client:
             collector = StatsDMetricsCollector()
 
             mock_client.assert_called_once_with(
-                host="localhost",
-                port=8125,
-                prefix="sqs_integration",
-                maxudpsize=512
+                host="localhost", port=8125, prefix="sqs_integration", maxudpsize=512
             )
 
     def test_initialization_with_custom_settings(self):
@@ -551,19 +560,13 @@ class TestStatsDMetricsCollector:
         pytest.importorskip("statsd")
         from awskit.metrics import StatsDMetricsCollector
 
-        with patch('statsd.StatsClient') as mock_client:
+        with patch("statsd.StatsClient") as mock_client:
             collector = StatsDMetricsCollector(
-                host="statsd.example.com",
-                port=9125,
-                prefix="my_app",
-                maxudpsize=1024
+                host="statsd.example.com", port=9125, prefix="my_app", maxudpsize=1024
             )
 
             mock_client.assert_called_once_with(
-                host="statsd.example.com",
-                port=9125,
-                prefix="my_app",
-                maxudpsize=1024
+                host="statsd.example.com", port=9125, prefix="my_app", maxudpsize=1024
             )
 
     def test_increment_received(self):
@@ -571,7 +574,7 @@ class TestStatsDMetricsCollector:
         pytest.importorskip("statsd")
         from awskit.metrics import StatsDMetricsCollector
 
-        with patch('statsd.StatsClient') as mock_client_class:
+        with patch("statsd.StatsClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client_class.return_value = mock_client
 
@@ -586,7 +589,7 @@ class TestStatsDMetricsCollector:
         pytest.importorskip("statsd")
         from awskit.metrics import StatsDMetricsCollector
 
-        with patch('statsd.StatsClient') as mock_client_class:
+        with patch("statsd.StatsClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client_class.return_value = mock_client
 
@@ -601,7 +604,7 @@ class TestStatsDMetricsCollector:
         pytest.importorskip("statsd")
         from awskit.metrics import StatsDMetricsCollector
 
-        with patch('statsd.StatsClient') as mock_client_class:
+        with patch("statsd.StatsClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client_class.return_value = mock_client
 
@@ -616,7 +619,7 @@ class TestStatsDMetricsCollector:
         pytest.importorskip("statsd")
         from awskit.metrics import StatsDMetricsCollector
 
-        with patch('statsd.StatsClient') as mock_client_class:
+        with patch("statsd.StatsClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client_class.return_value = mock_client
 
@@ -631,7 +634,7 @@ class TestStatsDMetricsCollector:
         pytest.importorskip("statsd")
         from awskit.metrics import StatsDMetricsCollector
 
-        with patch('statsd.StatsClient') as mock_client_class:
+        with patch("statsd.StatsClient") as mock_client_class:
             mock_client = MagicMock()
             mock_client_class.return_value = mock_client
 
@@ -647,7 +650,7 @@ class TestStatsDMetricsCollector:
         pytest.importorskip("statsd")
         from awskit.metrics import StatsDMetricsCollector
 
-        with patch('statsd.StatsClient'):
+        with patch("statsd.StatsClient"):
             collector = StatsDMetricsCollector()
 
             queue_url = "https://sqs.us-east-1.amazonaws.com/123456789/test-queue"

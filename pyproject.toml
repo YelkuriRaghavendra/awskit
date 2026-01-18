@@ -97,12 +97,13 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --strict-markers"
+addopts = "-v --strict-markers --ignore=src/"
 markers = [
     "unit: Unit tests",
     "integration: Integration tests",
     "property: Property-based tests",
 ]
+norecursedirs = ["src", ".git", ".venv", "dist", "build"]
 
 [tool.bumpversion]
 current_version = "1.0.0"

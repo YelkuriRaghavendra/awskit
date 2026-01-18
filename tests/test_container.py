@@ -26,6 +26,7 @@ from awskit.converter import JsonMessageConverter
 @dataclass
 class TestMessage:
     """Test message type."""
+
     id: str
     content: str
 
@@ -45,7 +46,9 @@ class TestMessageListenerContainer:
         """Test container initializes correctly."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Register a listener
         @sqs_listener("test-queue")
@@ -75,7 +78,9 @@ class TestMessageListenerContainer:
         """Test container resolves queue names to URLs."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue"
+        }
 
         # Register a listener
         @sqs_listener("my-queue")
@@ -164,7 +169,9 @@ class TestMessageListenerContainer:
         """Test extracting target type from listener with type hints."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Register a listener with type hints
         @sqs_listener("test-queue")
@@ -191,7 +198,9 @@ class TestMessageListenerContainer:
         """Test target type defaults to dict when no type hints."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Register a listener without type hints
         @sqs_listener("test-queue")
@@ -218,7 +227,9 @@ class TestMessageListenerContainer:
         """Test container start creates thread pool."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Register a listener
         @sqs_listener("test-queue")
@@ -253,7 +264,9 @@ class TestMessageListenerContainer:
         """Test container stop performs graceful shutdown."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Register a listener
         @sqs_listener("test-queue")
@@ -286,7 +299,9 @@ class TestMessageListenerContainer:
         """Test ON_SUCCESS mode acknowledges message when listener succeeds."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Register a listener with ON_SUCCESS mode
         @sqs_listener("test-queue", acknowledgement_mode=AcknowledgementMode.ON_SUCCESS)
@@ -308,6 +323,7 @@ class TestMessageListenerContainer:
 
         # Create a test message
         from awskit.sqs.models import Message
+
         message = Message(
             message_id="test-msg-1",
             receipt_handle="test-receipt-1",
@@ -318,22 +334,25 @@ class TestMessageListenerContainer:
         )
 
         # Get the listener config
-        listener_func, listener_config = container._listeners["https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"][0]
+        listener_func, listener_config = container._listeners[
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        ][0]
 
         # Invoke listener
         container._invoke_listener(listener_func, message, listener_config)
 
         # Verify message was acknowledged
         ack_processor.acknowledge.assert_called_once_with(
-            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue",
-            "test-receipt-1"
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue", "test-receipt-1"
         )
 
     def test_acknowledgement_on_success_mode_does_not_acknowledge_on_failure(self):
         """Test ON_SUCCESS mode does not acknowledge message when listener fails."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Register a listener with ON_SUCCESS mode that fails
         @sqs_listener("test-queue", acknowledgement_mode=AcknowledgementMode.ON_SUCCESS)
@@ -354,6 +373,7 @@ class TestMessageListenerContainer:
 
         # Create a test message
         from awskit.sqs.models import Message
+
         message = Message(
             message_id="test-msg-1",
             receipt_handle="test-receipt-1",
@@ -364,10 +384,13 @@ class TestMessageListenerContainer:
         )
 
         # Get the listener config
-        listener_func, listener_config = container._listeners["https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"][0]
+        listener_func, listener_config = container._listeners[
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        ][0]
 
         # Invoke listener (should raise exception)
         from awskit.exceptions import ListenerError
+
         with pytest.raises(ListenerError):
             container._invoke_listener(listener_func, message, listener_config)
 
@@ -378,7 +401,9 @@ class TestMessageListenerContainer:
         """Test ALWAYS mode acknowledges message when listener succeeds."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Register a listener with ALWAYS mode
         @sqs_listener("test-queue", acknowledgement_mode=AcknowledgementMode.ALWAYS)
@@ -400,6 +425,7 @@ class TestMessageListenerContainer:
 
         # Create a test message
         from awskit.sqs.models import Message
+
         message = Message(
             message_id="test-msg-1",
             receipt_handle="test-receipt-1",
@@ -410,22 +436,25 @@ class TestMessageListenerContainer:
         )
 
         # Get the listener config
-        listener_func, listener_config = container._listeners["https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"][0]
+        listener_func, listener_config = container._listeners[
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        ][0]
 
         # Invoke listener
         container._invoke_listener(listener_func, message, listener_config)
 
         # Verify message was acknowledged
         ack_processor.acknowledge.assert_called_once_with(
-            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue",
-            "test-receipt-1"
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue", "test-receipt-1"
         )
 
     def test_acknowledgement_always_mode_acknowledges_on_failure(self):
         """Test ALWAYS mode acknowledges message even when listener fails."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Register a listener with ALWAYS mode that fails
         @sqs_listener("test-queue", acknowledgement_mode=AcknowledgementMode.ALWAYS)
@@ -446,6 +475,7 @@ class TestMessageListenerContainer:
 
         # Create a test message
         from awskit.sqs.models import Message
+
         message = Message(
             message_id="test-msg-1",
             receipt_handle="test-receipt-1",
@@ -456,24 +486,28 @@ class TestMessageListenerContainer:
         )
 
         # Get the listener config
-        listener_func, listener_config = container._listeners["https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"][0]
+        listener_func, listener_config = container._listeners[
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        ][0]
 
         # Invoke listener (should raise exception)
         from awskit.exceptions import ListenerError
+
         with pytest.raises(ListenerError):
             container._invoke_listener(listener_func, message, listener_config)
 
         # Verify message WAS acknowledged despite failure
         ack_processor.acknowledge.assert_called_once_with(
-            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue",
-            "test-receipt-1"
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue", "test-receipt-1"
         )
 
     def test_acknowledgement_manual_mode_provides_handle_and_does_not_auto_acknowledge(self):
         """Test MANUAL mode provides Acknowledgement handle and does not auto-acknowledge."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Track if acknowledgement handle was provided
         ack_handle_received = []
@@ -499,6 +533,7 @@ class TestMessageListenerContainer:
 
         # Create a test message
         from awskit.sqs.models import Acknowledgement, Message
+
         message = Message(
             message_id="test-msg-1",
             receipt_handle="test-receipt-1",
@@ -509,7 +544,9 @@ class TestMessageListenerContainer:
         )
 
         # Get the listener config
-        listener_func, listener_config = container._listeners["https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"][0]
+        listener_func, listener_config = container._listeners[
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        ][0]
 
         # Invoke listener
         container._invoke_listener(listener_func, message, listener_config)
@@ -517,7 +554,10 @@ class TestMessageListenerContainer:
         # Verify acknowledgement handle was provided
         assert len(ack_handle_received) == 1
         assert isinstance(ack_handle_received[0], Acknowledgement)
-        assert ack_handle_received[0].queue_url == "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        assert (
+            ack_handle_received[0].queue_url
+            == "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        )
         assert ack_handle_received[0].receipt_handle == "test-receipt-1"
 
         # Verify message was NOT auto-acknowledged
@@ -527,7 +567,9 @@ class TestMessageListenerContainer:
         """Test MANUAL mode allows listener to acknowledge explicitly."""
         # Create mock client
         client = MagicMock()
-        client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Register a listener with MANUAL mode that acknowledges explicitly
         @sqs_listener("test-queue", acknowledgement_mode=AcknowledgementMode.MANUAL)
@@ -549,6 +591,7 @@ class TestMessageListenerContainer:
 
         # Create a test message
         from awskit.sqs.models import Message
+
         message = Message(
             message_id="test-msg-1",
             receipt_handle="test-receipt-1",
@@ -559,13 +602,14 @@ class TestMessageListenerContainer:
         )
 
         # Get the listener config
-        listener_func, listener_config = container._listeners["https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"][0]
+        listener_func, listener_config = container._listeners[
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        ][0]
 
         # Invoke listener
         container._invoke_listener(listener_func, message, listener_config)
 
         # Verify message was acknowledged by the listener
         ack_processor.acknowledge.assert_called_once_with(
-            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue",
-            "test-receipt-1"
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue", "test-receipt-1"
         )

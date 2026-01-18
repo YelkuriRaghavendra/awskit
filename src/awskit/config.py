@@ -222,7 +222,6 @@ class SqsConfig:
     acknowledgement: AcknowledgementConfig = field(default_factory=AcknowledgementConfig)
 
 
-
 T = TypeVar("T")
 
 
@@ -287,9 +286,7 @@ def _parse_value(value: str, target_type: Type[Any]) -> Any:
     return value
 
 
-def _load_nested_config(
-    prefix: str, config_class: Type[T], env_vars: Dict[str, str]
-) -> T:
+def _load_nested_config(prefix: str, config_class: Type[T], env_vars: Dict[str, str]) -> T:
     """
     Load a nested configuration object from environment variables.
 
@@ -376,14 +373,10 @@ def load_config_from_env(prefix: str = "SQS") -> SqsConfig:
     has_acknowledgement_vars = any(k.startswith(acknowledgement_prefix) for k in env_vars)
 
     if has_template_vars:
-        root_kwargs["template"] = _load_nested_config(
-            template_prefix, TemplateConfig, env_vars
-        )
+        root_kwargs["template"] = _load_nested_config(template_prefix, TemplateConfig, env_vars)
 
     if has_container_vars:
-        root_kwargs["container"] = _load_nested_config(
-            container_prefix, ContainerConfig, env_vars
-        )
+        root_kwargs["container"] = _load_nested_config(container_prefix, ContainerConfig, env_vars)
 
     if has_acknowledgement_vars:
         root_kwargs["acknowledgement"] = _load_nested_config(

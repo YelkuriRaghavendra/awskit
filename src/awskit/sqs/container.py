@@ -133,8 +133,6 @@ class MessageListenerContainer:
                 self._error_counts[queue_url] = 0
                 self._error_locks[queue_url] = threading.Lock()
 
-
-
     def _resolve_queue_url(self, queue: str) -> str:
         """
         Resolve queue name or URL to a queue URL.
@@ -218,9 +216,7 @@ class MessageListenerContainer:
         """
         # Find all messages in this message group from the current batch
         group_messages = [
-            msg
-            for msg in messages
-            if self._get_message_group_id(msg) == message_group_id
+            msg for msg in messages if self._get_message_group_id(msg) == message_group_id
         ]
 
         if not group_messages:
@@ -253,17 +249,16 @@ class MessageListenerContainer:
             logger.warning("Container is already started")
             return
 
-
         # Use a reasonable default pool size
         max_workers = sum(
             config.max_concurrent_messages
             for listeners in self._listeners.values()
             for _, config in listeners
         )
-        
+
         # Ensure at least 1 worker (even if no listeners registered yet)
         max_workers = max(1, max_workers)
-        
+
         self._executor = ThreadPoolExecutor(
             max_workers=max_workers, thread_name_prefix="SQS-Processor"
         )
@@ -282,8 +277,6 @@ class MessageListenerContainer:
             )
             polling_thread.start()
             self._polling_threads.append(polling_thread)
-
-
 
     def stop(self, timeout_seconds: Optional[int] = None) -> None:
         """
@@ -304,14 +297,15 @@ class MessageListenerContainer:
 
         timeout = timeout_seconds or self.config.listener_shutdown_timeout_seconds
 
-
         self._shutdown_event.set()
 
         # Wait for polling threads to finish
         for thread in self._polling_threads:
             thread.join(timeout=timeout)
             if thread.is_alive():
-                logger.warning("Polling thread did not stop within timeout", thread_name=thread.name)
+                logger.warning(
+                    "Polling thread did not stop within timeout", thread_name=thread.name
+                )
 
         # Shutdown thread pool and wait for in-flight messages
         if self._executor:
@@ -320,8 +314,6 @@ class MessageListenerContainer:
 
         # Flush pending acknowledgements
         self.acknowledgement_processor.flush()
-
-
 
     def _calculate_backoff_delay(self, queue_url: str) -> float:
         """
@@ -341,7 +333,7 @@ class MessageListenerContainer:
         policy = self.config.backoff_policy
 
         # Calculate exponential backoff
-        delay = policy.initial_interval_seconds * (policy.multiplier ** error_count)
+        delay = policy.initial_interval_seconds * (policy.multiplier**error_count)
 
         # Cap at max interval
         delay = min(delay, policy.max_interval_seconds)
@@ -427,8 +419,6 @@ class MessageListenerContainer:
                 backoff_delay = self._calculate_backoff_delay(queue_url)
                 self._shutdown_event.wait(backoff_delay)
 
-
-
     def _poll_queue(self, queue_url: str, config: ListenerConfig) -> None:
         """
         Poll a single queue and process messages.
@@ -504,9 +494,7 @@ class MessageListenerContainer:
         for msg in messages:
             # Submit message processing to thread pool
             if self._executor:
-                self._executor.submit(
-                    self._process_message, queue_url, msg, config
-                )
+                self._executor.submit(self._process_message, queue_url, msg, config)
 
     def _process_message(
         self, queue_url: str, raw_message: Dict[str, Any], config: ListenerConfig
@@ -525,7 +513,7 @@ class MessageListenerContainer:
         """
         message_group_id: Optional[str] = None
         is_fifo = self._is_fifo_queue(queue_url)
-        
+
         # Bind context for this message
         log = logger.bind(
             message_id=raw_message.get("MessageId", "unknown"),
@@ -551,9 +539,7 @@ class MessageListenerContainer:
             for listener_func, listener_config in listeners:
                 try:
                     # Deserialize message
-                    message = self._deserialize_message(
-                        raw_message, queue_url, listener_func
-                    )
+                    message = self._deserialize_message(raw_message, queue_url, listener_func)
 
                     # Invoke listener
                     self._invoke_listener(listener_func, message, listener_config)
@@ -655,9 +641,7 @@ class MessageListenerContainer:
 
         # Deserialize body
         try:
-            body = self.converter.deserialize(
-                raw_message["Body"], type_info, target_type
-            )
+            body = self.converter.deserialize(raw_message["Body"], type_info, target_type)
         except Exception as e:
             raise DeserializationError(
                 f"Failed to deserialize message {raw_message.get('MessageId', 'unknown')}: {e}"
@@ -753,8 +737,7 @@ class MessageListenerContainer:
 
         # Check if listener expects an Acknowledgement handle
         needs_ack_handle = (
-            len(params) > 1
-            and config.acknowledgement_mode == AcknowledgementMode.MANUAL
+            len(params) > 1 and config.acknowledgement_mode == AcknowledgementMode.MANUAL
         )
 
         if needs_ack_handle:
@@ -809,9 +792,7 @@ class MessageListenerContainer:
                     )
 
             # Wrap in ListenerError for clarity
-            exception_to_raise = ListenerError(
-                f"Listener {listener_func.__name__} failed: {e}"
-            )
+            exception_to_raise = ListenerError(f"Listener {listener_func.__name__} failed: {e}")
 
         finally:
             # Handle acknowledgement based on strategy

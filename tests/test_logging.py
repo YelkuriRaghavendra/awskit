@@ -49,7 +49,9 @@ class TestStructuredLogging:
         template = SqsTemplate(self.client, self.converter, TemplateConfig())
 
         # Mock queue URL resolution
-        self.client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        self.client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Mock send_message
         self.client.send_message.return_value = {
@@ -62,16 +64,30 @@ class TestStructuredLogging:
 
         # Check that log contains message ID and queue name
         # With structlog, context is in record.msg dict
-        assert any("Message sent to queue" in str(record.msg.get("event", "")) for record in caplog.records if isinstance(record.msg, dict))
-        assert any(record.msg.get("message_id") == "msg-123" for record in caplog.records if isinstance(record.msg, dict))
-        assert any(record.msg.get("queue_name") == "test-queue" for record in caplog.records if isinstance(record.msg, dict))
+        assert any(
+            "Message sent to queue" in str(record.msg.get("event", ""))
+            for record in caplog.records
+            if isinstance(record.msg, dict)
+        )
+        assert any(
+            record.msg.get("message_id") == "msg-123"
+            for record in caplog.records
+            if isinstance(record.msg, dict)
+        )
+        assert any(
+            record.msg.get("queue_name") == "test-queue"
+            for record in caplog.records
+            if isinstance(record.msg, dict)
+        )
 
     def test_template_batch_send_logs_with_context(self, caplog):
         """Test that template.send_batch logs with proper context."""
         template = SqsTemplate(self.client, self.converter, TemplateConfig())
 
         # Mock queue URL resolution
-        self.client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        self.client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Mock send_message_batch
         self.client.send_message_batch.return_value = {
@@ -89,8 +105,16 @@ class TestStructuredLogging:
 
         # Check that log contains batch information
         # With structlog, context is in record.msg dict
-        assert any("Batch send" in str(record.msg.get("event", "")) for record in caplog.records if isinstance(record.msg, dict))
-        assert any(record.msg.get("successful_count") == 2 for record in caplog.records if isinstance(record.msg, dict))
+        assert any(
+            "Batch send" in str(record.msg.get("event", ""))
+            for record in caplog.records
+            if isinstance(record.msg, dict)
+        )
+        assert any(
+            record.msg.get("successful_count") == 2
+            for record in caplog.records
+            if isinstance(record.msg, dict)
+        )
 
     def test_acknowledgement_logs_with_context(self, caplog):
         """Test that acknowledgement processor logs with proper context."""
@@ -126,16 +150,21 @@ class TestStructuredLogging:
 
     def test_container_message_lifecycle_logging(self, caplog):
         """Test that container logs message lifecycle events."""
+
         # Create a simple listener
         def test_listener(message: TestMessage):
             pass
 
         # Register the listener
-        config = ListenerConfig(queue="test-queue", acknowledgement_mode=AcknowledgementMode.ON_SUCCESS)
+        config = ListenerConfig(
+            queue="test-queue", acknowledgement_mode=AcknowledgementMode.ON_SUCCESS
+        )
         ListenerRegistry.register(test_listener, config)
 
         # Mock client
-        self.client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        self.client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Create container
         ack_processor = AcknowledgementProcessor(self.client, AcknowledgementConfig())
@@ -186,7 +215,9 @@ class TestStructuredLogging:
         template = SqsTemplate(self.client, self.converter, TemplateConfig())
 
         # Mock queue URL resolution
-        self.client.get_queue_url.return_value = {"QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"}
+        self.client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
 
         # Mock send_message
         self.client.send_message.return_value = {
@@ -199,7 +230,11 @@ class TestStructuredLogging:
 
         # Find the log record for message sent
         # With structlog, context is in record.msg dict
-        log_records = [r for r in caplog.records if isinstance(r.msg, dict) and "Message sent" in str(r.msg.get("event", ""))]
+        log_records = [
+            r
+            for r in caplog.records
+            if isinstance(r.msg, dict) and "Message sent" in str(r.msg.get("event", ""))
+        ]
         assert len(log_records) > 0
 
         # Check that the log record has the required context

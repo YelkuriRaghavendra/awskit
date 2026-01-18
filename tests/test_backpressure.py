@@ -2,7 +2,6 @@
 Unit tests for BackpressureManager.
 """
 
-
 from awskit.sqs.backpressure import BackpressureManager
 from awskit.config import BackpressureMode, ListenerConfig
 

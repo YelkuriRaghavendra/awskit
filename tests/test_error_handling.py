@@ -35,9 +35,7 @@ class TestPollingErrorHandling:
         ListenerRegistry.clear()
         self.client = MagicMock()
         self.converter = JsonMessageConverter()
-        self.ack_processor = AcknowledgementProcessor(
-            self.client, AcknowledgementConfig()
-        )
+        self.ack_processor = AcknowledgementProcessor(self.client, AcknowledgementConfig())
         self.backpressure_manager = BackpressureManager(BackpressureMode.AUTO)
 
     def test_backoff_calculation_exponential(self):
@@ -161,9 +159,7 @@ class TestCustomErrorHandlers:
         ListenerRegistry.clear()
         self.client = MagicMock()
         self.converter = JsonMessageConverter()
-        self.ack_processor = AcknowledgementProcessor(
-            self.client, AcknowledgementConfig()
-        )
+        self.ack_processor = AcknowledgementProcessor(self.client, AcknowledgementConfig())
         self.backpressure_manager = BackpressureManager(BackpressureMode.AUTO)
 
     def test_custom_error_handler_invoked_on_listener_exception(self):

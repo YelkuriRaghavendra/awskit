@@ -200,7 +200,11 @@ class AcknowledgementProcessor:
                                 # Take up to threshold messages
                                 batch_size = min(
                                     len(handles),
-                                    self.config.threshold if self.config.threshold > 0 else len(handles)
+                                    (
+                                        self.config.threshold
+                                        if self.config.threshold > 0
+                                        else len(handles)
+                                    ),
                                 )
                                 batch = [handles.popleft() for _ in range(batch_size)]
                                 self._delete_messages_batch(queue_url, batch)
@@ -255,9 +259,7 @@ class AcknowledgementProcessor:
             receipt_handle: Receipt handle of the message
         """
         try:
-            self.client.delete_message(
-                QueueUrl=queue_url, ReceiptHandle=receipt_handle
-            )
+            self.client.delete_message(QueueUrl=queue_url, ReceiptHandle=receipt_handle)
         except Exception as e:
             logger.error(
                 "Failed to acknowledge message",
@@ -283,14 +285,11 @@ class AcknowledgementProcessor:
         for i in range(0, len(receipt_handles), batch_size):
             batch = receipt_handles[i : i + batch_size]
             entries = [
-                {"Id": str(idx), "ReceiptHandle": handle}
-                for idx, handle in enumerate(batch)
+                {"Id": str(idx), "ReceiptHandle": handle} for idx, handle in enumerate(batch)
             ]
 
             try:
-                response = self.client.delete_message_batch(
-                    QueueUrl=queue_url, Entries=entries
-                )
+                response = self.client.delete_message_batch(QueueUrl=queue_url, Entries=entries)
 
                 # Log failures
                 if "Failed" in response and response["Failed"]:

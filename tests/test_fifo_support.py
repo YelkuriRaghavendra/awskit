@@ -22,6 +22,7 @@ from awskit.converter import JsonMessageConverter
 @dataclass
 class TestMessage:
     """Test message type."""
+
     id: str
     content: str
 
@@ -127,19 +128,11 @@ class TestFifoSupport:
         )
 
         # Test message with message group ID
-        message_with_group = {
-            "MessageId": "msg-1",
-            "Attributes": {
-                "MessageGroupId": "group-1"
-            }
-        }
+        message_with_group = {"MessageId": "msg-1", "Attributes": {"MessageGroupId": "group-1"}}
         assert container._get_message_group_id(message_with_group) == "group-1"
 
         # Test message without message group ID
-        message_without_group = {
-            "MessageId": "msg-2",
-            "Attributes": {}
-        }
+        message_without_group = {"MessageId": "msg-2", "Attributes": {}}
         assert container._get_message_group_id(message_without_group) is None
 
     def test_extend_visibility_for_message_group_calls_sqs(self):
@@ -172,26 +165,24 @@ class TestFifoSupport:
             {
                 "MessageId": "msg-1",
                 "ReceiptHandle": "handle-1",
-                "Attributes": {"MessageGroupId": "group-1"}
+                "Attributes": {"MessageGroupId": "group-1"},
             },
             {
                 "MessageId": "msg-2",
                 "ReceiptHandle": "handle-2",
-                "Attributes": {"MessageGroupId": "group-1"}
+                "Attributes": {"MessageGroupId": "group-1"},
             },
             {
                 "MessageId": "msg-3",
                 "ReceiptHandle": "handle-3",
-                "Attributes": {"MessageGroupId": "group-2"}
-            }
+                "Attributes": {"MessageGroupId": "group-2"},
+            },
         ]
 
         queue_url = "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue.fifo"
 
         # Extend visibility for group-1
-        container._extend_visibility_for_message_group(
-            queue_url, "group-1", messages, 60
-        )
+        container._extend_visibility_for_message_group(queue_url, "group-1", messages, 60)
 
         # Verify change_message_visibility was called for messages in group-1
         assert client.change_message_visibility.call_count == 2
