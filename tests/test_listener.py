@@ -2,7 +2,6 @@
 Tests for listener registry and decorator functionality.
 """
 
-
 import pytest
 
 from awskit.config import (

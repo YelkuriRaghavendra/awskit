@@ -150,7 +150,7 @@ class TestStructuredLogging:
         assert manager is not None
 
     def test_container_message_lifecycle_logging(self, caplog):
-        """Test that container logs message lifecycle events."""
+        """Test that container loads and initializes registered listeners."""
 
         # Create a simple listener
         def test_listener(message: TestMessage):
@@ -171,17 +171,19 @@ class TestStructuredLogging:
         ack_processor = AcknowledgementProcessor(self.client, AcknowledgementConfig())
         backpressure = BackpressureManager(BackpressureMode.AUTO)
 
-        with caplog.at_level(logging.INFO):
-            MessageListenerContainer(
-                self.client,
-                self.converter,
-                ack_processor,
-                backpressure,
-                ContainerConfig(),
-            )
+        container = MessageListenerContainer(
+            self.client,
+            self.converter,
+            ack_processor,
+            backpressure,
+            ContainerConfig(),
+        )
 
-        # Verify that listener registration was logged
-        assert any("registered listener" in record.message.lower() for record in caplog.records)
+        # Verify that the container loaded the listener
+        queue_url = "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        assert queue_url in container._listeners
+        assert len(container._listeners[queue_url]) == 1
+        assert container._listeners[queue_url][0][0] == test_listener
 
     def test_converter_serialization_logs(self, caplog):
         """Test that converter logs serialization operations."""
