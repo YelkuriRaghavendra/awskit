@@ -2,11 +2,11 @@
 Tests for automatic container context management.
 """
 
-import time
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from awskit.config import BackpressureMode, ContainerConfig, SqsConfig
 from awskit.sqs import (
     SqsListenerContext,
     get_listener_context,
@@ -14,7 +14,6 @@ from awskit.sqs import (
     start_listeners,
     stop_listeners,
 )
-from awskit.config import BackpressureMode, SqsConfig, ContainerConfig
 from awskit.sqs.registry import ListenerRegistry
 
 
@@ -87,7 +86,7 @@ def test_start_listeners_auto_start(mock_client):
         pass
 
     with patch.object(SqsListenerContext, "start") as mock_start:
-        context = start_listeners(mock_client, auto_start=True)
+        start_listeners(mock_client, auto_start=True)
         mock_start.assert_called_once()
 
 
@@ -173,7 +172,7 @@ def test_multiple_listeners_with_context(mock_client):
 
     mock_client.get_queue_url.side_effect = get_queue_url_side_effect
 
-    context = start_listeners(mock_client, auto_start=False)
+    start_listeners(mock_client, auto_start=False)
 
     # Both listeners should be registered
     assert len(ListenerRegistry.get_listeners()) == 2
@@ -200,7 +199,7 @@ def test_context_atexit_registration(mock_client):
     import atexit
 
     with patch.object(atexit, "register") as mock_register:
-        context = SqsListenerContext(client=mock_client)
+        SqsListenerContext(client=mock_client)
         mock_register.assert_called_once()
 
 

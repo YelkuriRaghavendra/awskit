@@ -7,17 +7,18 @@ acknowledgement and backpressure management.
 """
 
 import inspect
-import structlog
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, get_type_hints
+from typing import Any, Callable, Optional, get_type_hints
 
-from awskit.sqs.acknowledgement import AcknowledgementProcessor
-from awskit.sqs.backpressure import BackpressureManager
+import structlog
+
 from awskit.config import AcknowledgementMode, ContainerConfig, ListenerConfig
 from awskit.converter import MessageConverter
 from awskit.exceptions import DeserializationError, ListenerError
 from awskit.metrics import MetricsCollector, NoOpMetricsCollector
+from awskit.sqs.acknowledgement import AcknowledgementProcessor
+from awskit.sqs.backpressure import BackpressureManager
 from awskit.sqs.models import Acknowledgement, Message
 from awskit.sqs.registry import ListenerRegistry
 
@@ -73,27 +74,27 @@ class MessageListenerContainer:
         self.metrics_collector = metrics_collector or NoOpMetricsCollector()
 
         # Queue URL cache
-        self._queue_url_cache: Dict[str, str] = {}
+        self._queue_url_cache: dict[str, str] = {}
 
         # Listener storage: queue_url -> (listener_func, config)
-        self._listeners: Dict[str, List[Tuple[Callable[..., Any], ListenerConfig]]] = {}
+        self._listeners: dict[str, list[tuple[Callable[..., Any], ListenerConfig]]] = {}
 
         # Thread pools for concurrent processing
         self._executor: Optional[ThreadPoolExecutor] = None
 
         # Polling threads
-        self._polling_threads: List[threading.Thread] = []
+        self._polling_threads: list[threading.Thread] = []
         self._shutdown_event = threading.Event()
 
         # FIFO message group tracking
         # Maps queue_url -> set of message_group_ids currently being processed
-        self._active_message_groups: Dict[str, set[str]] = {}
-        self._message_group_locks: Dict[str, threading.Lock] = {}
+        self._active_message_groups: dict[str, set[str]] = {}
+        self._message_group_locks: dict[str, threading.Lock] = {}
 
         # Error tracking for backoff
         # Maps queue_url -> consecutive error count
-        self._error_counts: Dict[str, int] = {}
-        self._error_locks: Dict[str, threading.Lock] = {}
+        self._error_counts: dict[str, int] = {}
+        self._error_locks: dict[str, threading.Lock] = {}
 
         # Load registered listeners
         self._load_listeners()
@@ -180,7 +181,7 @@ class MessageListenerContainer:
         queue_name = queue_url.split("/")[-1]
         return queue_name.endswith(".fifo")
 
-    def _get_message_group_id(self, raw_message: Dict[str, Any]) -> Optional[str]:
+    def _get_message_group_id(self, raw_message: dict[str, Any]) -> Optional[str]:
         """
         Extract message group ID from a message.
 
@@ -198,7 +199,7 @@ class MessageListenerContainer:
         self,
         queue_url: str,
         message_group_id: str,
-        messages: List[Dict[str, Any]],
+        messages: list[dict[str, Any]],
         visibility_timeout: int,
     ) -> None:
         """
@@ -431,7 +432,7 @@ class MessageListenerContainer:
             config: The listener configuration for this queue
         """
         # Build receive parameters
-        receive_params: Dict[str, Any] = {
+        receive_params: dict[str, Any] = {
             "QueueUrl": queue_url,
             "MaxNumberOfMessages": config.max_messages_per_poll,
             "WaitTimeSeconds": config.poll_timeout_seconds,
@@ -476,7 +477,7 @@ class MessageListenerContainer:
             visibility_timeout = config.visibility_timeout or 30
 
             # Group messages by message group ID
-            message_groups: Dict[str, List[Dict[str, Any]]] = {}
+            message_groups: dict[str, list[dict[str, Any]]] = {}
             for msg in messages:
                 group_id = self._get_message_group_id(msg)
                 if group_id:
@@ -497,7 +498,7 @@ class MessageListenerContainer:
                 self._executor.submit(self._process_message, queue_url, msg, config)
 
     def _process_message(
-        self, queue_url: str, raw_message: Dict[str, Any], config: ListenerConfig
+        self, queue_url: str, raw_message: dict[str, Any], config: ListenerConfig
     ) -> None:
         """
         Process a single message by deserializing and invoking listeners.
@@ -609,7 +610,7 @@ class MessageListenerContainer:
                 active_groups.discard(message_group_id)
 
     def _deserialize_message(
-        self, raw_message: Dict[str, Any], queue_url: str, listener_func: Callable[..., Any]
+        self, raw_message: dict[str, Any], queue_url: str, listener_func: Callable[..., Any]
     ) -> Message:
         """
         Deserialize a raw SQS message to a Message object.
@@ -657,7 +658,7 @@ class MessageListenerContainer:
             queue_url=queue_url,
         )
 
-    def _get_listener_target_type(self, listener_func: Callable[..., Any]) -> Type[Any]:
+    def _get_listener_target_type(self, listener_func: Callable[..., Any]) -> type[Any]:
         """
         Extract the target type for deserialization from listener function's type hints.
 
@@ -690,7 +691,7 @@ class MessageListenerContainer:
 
             # Check if this parameter has a type hint
             if param.name in type_hints:
-                target_type: Type[Any] = type_hints[param.name]
+                target_type: type[Any] = type_hints[param.name]
                 return target_type
 
             # If no type hint, default to dict
@@ -785,7 +786,7 @@ class MessageListenerContainer:
                     # Invoke the error handler
                     config.error_handler(e, message.body, context)
 
-                except Exception as handler_error:
+                except Exception:
                     logger.exception(
                         "Error handler raised exception for message",
                         message_id=message.message_id,

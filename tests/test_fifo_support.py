@@ -5,6 +5,11 @@ Tests for FIFO queue support in MessageListenerContainer.
 from dataclasses import dataclass
 from unittest.mock import MagicMock
 
+from awskit.config import (
+    AcknowledgementConfig,
+    BackpressureMode,
+)
+from awskit.converter import JsonMessageConverter
 from awskit.sqs import (
     AcknowledgementProcessor,
     BackpressureManager,
@@ -12,11 +17,6 @@ from awskit.sqs import (
     MessageListenerContainer,
     sqs_listener,
 )
-from awskit.config import (
-    AcknowledgementConfig,
-    BackpressureMode,
-)
-from awskit.converter import JsonMessageConverter
 
 
 @dataclass

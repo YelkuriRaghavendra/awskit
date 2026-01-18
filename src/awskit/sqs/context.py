@@ -7,20 +7,18 @@ boilerplate.
 """
 
 import atexit
-import structlog
 from typing import Any, Optional
 
-from awskit.sqs.acknowledgement import AcknowledgementProcessor
-from awskit.sqs.backpressure import BackpressureManager
+import structlog
+
 from awskit.config import (
-    AcknowledgementConfig,
-    BackpressureMode,
-    ContainerConfig,
     SqsConfig,
 )
-from awskit.sqs.container import MessageListenerContainer
 from awskit.converter import JsonMessageConverter, MessageConverter
 from awskit.metrics import MetricsCollector, NoOpMetricsCollector
+from awskit.sqs.acknowledgement import AcknowledgementProcessor
+from awskit.sqs.backpressure import BackpressureManager
+from awskit.sqs.container import MessageListenerContainer
 
 logger = structlog.get_logger(__name__)
 

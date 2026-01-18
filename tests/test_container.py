@@ -7,13 +7,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from awskit.sqs import (
-    AcknowledgementProcessor,
-    BackpressureManager,
-    ListenerRegistry,
-    MessageListenerContainer,
-    sqs_listener,
-)
 from awskit.config import (
     AcknowledgementConfig,
     AcknowledgementMode,
@@ -21,6 +14,13 @@ from awskit.config import (
     ContainerConfig,
 )
 from awskit.converter import JsonMessageConverter
+from awskit.sqs import (
+    AcknowledgementProcessor,
+    BackpressureManager,
+    ListenerRegistry,
+    MessageListenerContainer,
+    sqs_listener,
+)
 
 
 @dataclass
@@ -92,7 +92,7 @@ class TestMessageListenerContainer:
         ack_processor = AcknowledgementProcessor(client, AcknowledgementConfig())
         backpressure = BackpressureManager(BackpressureMode.AUTO)
 
-        container = MessageListenerContainer(
+        MessageListenerContainer(
             client=client,
             converter=converter,
             acknowledgement_processor=ack_processor,
@@ -155,7 +155,7 @@ class TestMessageListenerContainer:
         ack_processor = AcknowledgementProcessor(client, AcknowledgementConfig())
         backpressure = MagicMock(spec=BackpressureManager)
 
-        container = MessageListenerContainer(
+        MessageListenerContainer(
             client=client,
             converter=converter,
             acknowledgement_processor=ack_processor,
@@ -221,7 +221,7 @@ class TestMessageListenerContainer:
 
         # Get target type
         target_type = container._get_listener_target_type(my_listener)
-        assert target_type == dict
+        assert target_type is dict
 
     def test_container_start_creates_thread_pool(self):
         """Test container start creates thread pool."""

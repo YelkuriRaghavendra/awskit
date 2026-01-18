@@ -5,12 +5,13 @@ This module provides abstract and concrete implementations for collecting
 metrics about message processing lifecycle events.
 """
 
-import structlog
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from threading import Lock
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
+
+import structlog
 
 logger = structlog.get_logger(__name__)
 
@@ -34,7 +35,7 @@ class LifecycleEvent(Enum):
 
 # Type alias for monitoring callbacks
 # Callback signature: (event: LifecycleEvent, queue_url: str, context: Dict[str, Any]) -> None
-MonitoringCallback = Callable[[LifecycleEvent, str, Dict[str, Any]], None]
+MonitoringCallback = Callable[[LifecycleEvent, str, dict[str, Any]], None]
 
 
 @dataclass
@@ -108,7 +109,7 @@ class MetricsCollector(ABC):
         pass
 
     @abstractmethod
-    def get_metrics(self, queue_url: Optional[str] = None) -> Dict[str, MetricCounts]:
+    def get_metrics(self, queue_url: Optional[str] = None) -> dict[str, MetricCounts]:
         """
         Get current metric counts.
 
@@ -132,7 +133,7 @@ class InMemoryMetricsCollector(MetricsCollector):
 
     def __init__(self) -> None:
         """Initialize the in-memory metrics collector."""
-        self._metrics: Dict[str, MetricCounts] = {}
+        self._metrics: dict[str, MetricCounts] = {}
         self._lock = Lock()
 
     def increment_received(self, queue_url: str, count: int = 1) -> None:
@@ -163,7 +164,7 @@ class InMemoryMetricsCollector(MetricsCollector):
                 self._metrics[queue_url] = MetricCounts()
             self._metrics[queue_url].acknowledged += count
 
-    def get_metrics(self, queue_url: Optional[str] = None) -> Dict[str, MetricCounts]:
+    def get_metrics(self, queue_url: Optional[str] = None) -> dict[str, MetricCounts]:
         """Get current metric counts."""
         with self._lock:
             if queue_url is not None:
@@ -214,7 +215,7 @@ class NoOpMetricsCollector(MetricsCollector):
         """No-op implementation."""
         pass
 
-    def get_metrics(self, queue_url: Optional[str] = None) -> Dict[str, MetricCounts]:
+    def get_metrics(self, queue_url: Optional[str] = None) -> dict[str, MetricCounts]:
         """Return empty metrics."""
         return {}
 
@@ -243,12 +244,12 @@ class PrometheusMetricsCollector(MetricsCollector):
             ImportError: If prometheus_client is not installed
         """
         try:
-            from prometheus_client import REGISTRY, CollectorRegistry, Counter
-        except ImportError:
+            from prometheus_client import REGISTRY, Counter
+        except ImportError as e:
             raise ImportError(
                 "prometheus_client is required for PrometheusMetricsCollector. "
                 "Install it with: pip install prometheus-client"
-            )
+            ) from e
 
         self._registry = registry or REGISTRY
 
@@ -313,7 +314,7 @@ class PrometheusMetricsCollector(MetricsCollector):
         queue_name = self._extract_queue_name(queue_url)
         self._acknowledged_counter.labels(queue_name=queue_name).inc(count)
 
-    def get_metrics(self, queue_url: Optional[str] = None) -> Dict[str, MetricCounts]:
+    def get_metrics(self, queue_url: Optional[str] = None) -> dict[str, MetricCounts]:
         """
         Get current metric counts.
 
@@ -328,10 +329,10 @@ class PrometheusMetricsCollector(MetricsCollector):
             Dictionary mapping queue URLs to their metric counts
         """
         try:
-            from prometheus_client import REGISTRY
+            import prometheus_client  # noqa: F401
         except ImportError:
             return {}
-        metrics: Dict[str, MetricCounts] = {}
+        metrics: dict[str, MetricCounts] = {}
         logger.warning(
             "get_metrics() on PrometheusMetricsCollector is not recommended. "
             "Query metrics directly from Prometheus instead."
@@ -375,11 +376,11 @@ class StatsDMetricsCollector(MetricsCollector):
         """
         try:
             from statsd import StatsClient
-        except ImportError:
+        except ImportError as e:
             raise ImportError(
                 "statsd is required for StatsDMetricsCollector. "
                 "Install it with: pip install statsd"
-            )
+            ) from e
 
         self._client = StatsClient(host=host, port=port, prefix=prefix, maxudpsize=maxudpsize)
 
@@ -421,7 +422,7 @@ class StatsDMetricsCollector(MetricsCollector):
         metric_name = f"messages_acknowledged.{queue_name}"
         self._client.incr(metric_name, count)
 
-    def get_metrics(self, queue_url: Optional[str] = None) -> Dict[str, MetricCounts]:
+    def get_metrics(self, queue_url: Optional[str] = None) -> dict[str, MetricCounts]:
         """
         Get current metric counts.
 
@@ -461,7 +462,7 @@ class CallbackMetricsCollector(MetricsCollector):
             base_collector: The underlying metrics collector to wrap
         """
         self._base_collector = base_collector
-        self._callbacks: Dict[LifecycleEvent, List[MonitoringCallback]] = {
+        self._callbacks: dict[LifecycleEvent, list[MonitoringCallback]] = {
             event: [] for event in LifecycleEvent
         }
         self._lock = Lock()
@@ -490,7 +491,7 @@ class CallbackMetricsCollector(MetricsCollector):
                 self._callbacks[event].remove(callback)
 
     def _invoke_callbacks(
-        self, event: LifecycleEvent, queue_url: str, context: Dict[str, Any]
+        self, event: LifecycleEvent, queue_url: str, context: dict[str, Any]
     ) -> None:
         """
         Invoke all registered callbacks for an event.
@@ -535,6 +536,6 @@ class CallbackMetricsCollector(MetricsCollector):
         self._base_collector.increment_acknowledged(queue_url, count)
         self._invoke_callbacks(LifecycleEvent.MESSAGE_ACKNOWLEDGED, queue_url, {"count": count})
 
-    def get_metrics(self, queue_url: Optional[str] = None) -> Dict[str, MetricCounts]:
+    def get_metrics(self, queue_url: Optional[str] = None) -> dict[str, MetricCounts]:
         """Get current metric counts from the base collector."""
         return self._base_collector.get_metrics(queue_url)

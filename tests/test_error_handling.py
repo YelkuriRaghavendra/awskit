@@ -10,8 +10,6 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 
-from awskit.sqs.acknowledgement import AcknowledgementProcessor
-from awskit.sqs.backpressure import BackpressureManager
 from awskit.config import (
     AcknowledgementConfig,
     AcknowledgementMode,
@@ -20,8 +18,11 @@ from awskit.config import (
     ContainerConfig,
     ListenerConfig,
 )
-from awskit.sqs.container import MessageListenerContainer
 from awskit.converter import JsonMessageConverter
+from awskit.exceptions import ListenerError
+from awskit.sqs.acknowledgement import AcknowledgementProcessor
+from awskit.sqs.backpressure import BackpressureManager
+from awskit.sqs.container import MessageListenerContainer
 from awskit.sqs.decorator import sqs_listener
 from awskit.sqs.models import Message
 from awskit.sqs.registry import ListenerRegistry
@@ -197,7 +198,7 @@ class TestCustomErrorHandlers:
         )
 
         # Invoke listener (should raise exception but call error handler)
-        with pytest.raises(Exception):
+        with pytest.raises(ListenerError):
             container._invoke_listener(failing_listener, message, config)
 
         # Verify error handler was called
@@ -242,7 +243,7 @@ class TestCustomErrorHandlers:
             error_handler=error_handler,
         )
 
-        with pytest.raises(Exception):
+        with pytest.raises(ListenerError):
             container._invoke_listener(failing_listener, message, config)
 
         # Verify context contains all expected fields

@@ -320,7 +320,7 @@ class TestPrometheusMetricsCollector:
         from awskit.metrics import PrometheusMetricsCollector
 
         registry = CollectorRegistry()
-        collector = PrometheusMetricsCollector(registry=registry)
+        PrometheusMetricsCollector(registry=registry)
 
         # Verify metrics are created
         metric_names = [metric.name for metric in registry.collect()]
@@ -337,7 +337,7 @@ class TestPrometheusMetricsCollector:
         from awskit.metrics import PrometheusMetricsCollector
 
         registry = CollectorRegistry()
-        collector = PrometheusMetricsCollector(namespace="my_app", registry=registry)
+        PrometheusMetricsCollector(namespace="my_app", registry=registry)
 
         # Verify metrics are created with custom namespace
         metric_names = [metric.name for metric in registry.collect()]
@@ -549,7 +549,7 @@ class TestStatsDMetricsCollector:
         from awskit.metrics import StatsDMetricsCollector
 
         with patch("statsd.StatsClient") as mock_client:
-            collector = StatsDMetricsCollector()
+            StatsDMetricsCollector()
 
             mock_client.assert_called_once_with(
                 host="localhost", port=8125, prefix="sqs_integration", maxudpsize=512
@@ -561,7 +561,7 @@ class TestStatsDMetricsCollector:
         from awskit.metrics import StatsDMetricsCollector
 
         with patch("statsd.StatsClient") as mock_client:
-            collector = StatsDMetricsCollector(
+            StatsDMetricsCollector(
                 host="statsd.example.com", port=9125, prefix="my_app", maxudpsize=1024
             )
 

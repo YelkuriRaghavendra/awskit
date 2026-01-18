@@ -8,8 +8,8 @@ verifying batching, ordering, error handling, and immediate acknowledgement.
 import time
 from unittest.mock import MagicMock
 
-from awskit.sqs.acknowledgement import AcknowledgementProcessor
 from awskit.config import AcknowledgementConfig, AcknowledgementOrdering
+from awskit.sqs.acknowledgement import AcknowledgementProcessor
 
 
 class TestAcknowledgementProcessor:

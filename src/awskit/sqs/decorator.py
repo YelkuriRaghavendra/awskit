@@ -8,7 +8,7 @@ and extracts type hints for automatic deserialization.
 """
 
 import inspect
-from typing import Any, Callable, Dict, Optional, TypeVar, get_type_hints
+from typing import Any, Callable, Optional, TypeVar, get_type_hints
 
 from awskit.config import (
     AcknowledgementMode,
@@ -30,7 +30,7 @@ def sqs_listener(
     batch: bool = False,
     visibility_timeout: Optional[int] = None,
     message_group_strategy: Optional[FifoGroupStrategy] = None,
-    error_handler: Optional[Callable[[Exception, Any, Dict[str, Any]], None]] = None,
+    error_handler: Optional[Callable[[Exception, Any, dict[str, Any]], None]] = None,
 ) -> Callable[[F], F]:
     """
     Decorator to mark a function as an SQS message listener.

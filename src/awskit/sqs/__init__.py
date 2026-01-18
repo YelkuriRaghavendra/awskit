@@ -10,10 +10,10 @@ from awskit.sqs.acknowledgement import AcknowledgementProcessor
 from awskit.sqs.backpressure import BackpressureManager
 from awskit.sqs.container import MessageListenerContainer
 from awskit.sqs.context import (
+    SqsListenerContext,
     get_listener_context,
     start_listeners,
     stop_listeners,
-    SqsListenerContext,
 )
 from awskit.sqs.decorator import sqs_listener
 from awskit.sqs.models import (

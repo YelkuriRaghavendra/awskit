@@ -12,15 +12,16 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from io import StringIO
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import MagicMock
 
 import structlog
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
+from awskit.config import TemplateConfig
 from awskit.converter import JsonMessageConverter
 from awskit.sqs.template import SqsTemplate
-from awskit.config import TemplateConfig
 
 
 @dataclass
@@ -645,7 +646,7 @@ class TestContextFieldSerialization:
         ),
     )
     def test_context_fields_appear_as_top_level_json_keys(
-        self, event_message: str, context_fields: Dict[str, Any]
+        self, event_message: str, context_fields: dict[str, Any]
     ):
         """
         Property 8: Context fields appear as top-level JSON keys

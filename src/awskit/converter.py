@@ -6,10 +6,11 @@ implementations for converting between Python objects and SQS message formats.
 """
 
 import json
-import structlog
 from abc import ABC, abstractmethod
 from dataclasses import asdict, is_dataclass
-from typing import Any, Dict, Tuple, Type
+from typing import Any
+
+import structlog
 
 from awskit.exceptions import DeserializationError, SerializationError
 
@@ -26,7 +27,7 @@ class MessageConverter(ABC):
     """
 
     @abstractmethod
-    def serialize(self, payload: Any) -> Tuple[str, Dict[str, Any]]:
+    def serialize(self, payload: Any) -> tuple[str, dict[str, Any]]:
         """
         Serialize a payload to string and return type metadata.
 
@@ -44,7 +45,7 @@ class MessageConverter(ABC):
         pass
 
     @abstractmethod
-    def deserialize(self, body: str, type_info: Dict[str, Any], target_type: Type[Any]) -> Any:
+    def deserialize(self, body: str, type_info: dict[str, Any], target_type: type[Any]) -> Any:
         """
         Deserialize a message body to the target type.
 
@@ -74,7 +75,7 @@ class JsonMessageConverter(MessageConverter):
     - Empty collections and None values
     """
 
-    def serialize(self, payload: Any) -> Tuple[str, Dict[str, Any]]:
+    def serialize(self, payload: Any) -> tuple[str, dict[str, Any]]:
         """
         Serialize using JSON with type information.
 
@@ -108,7 +109,7 @@ class JsonMessageConverter(MessageConverter):
                 f"Failed to serialize payload of type {type(payload).__name__}: {e}"
             ) from e
 
-    def deserialize(self, body: str, type_info: Dict[str, Any], target_type: Type[Any]) -> Any:
+    def deserialize(self, body: str, type_info: dict[str, Any], target_type: type[Any]) -> Any:
         """
         Deserialize from JSON to target type.
 

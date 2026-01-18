@@ -6,7 +6,7 @@ and their associated configurations, enabling the MessageListenerContainer
 to discover and invoke registered listeners.
 """
 
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable
 
 from awskit.config import ListenerConfig
 
@@ -24,7 +24,7 @@ class ListenerRegistry:
     instance management.
     """
 
-    _listeners: Dict[Callable[..., Any], ListenerConfig] = {}
+    _listeners: dict[Callable[..., Any], ListenerConfig] = {}
     _registration_disabled: bool = False
 
     @classmethod
@@ -41,7 +41,7 @@ class ListenerRegistry:
         cls._listeners[func] = config
 
     @classmethod
-    def get_listeners(cls) -> List[Tuple[Callable[..., Any], ListenerConfig]]:
+    def get_listeners(cls) -> list[tuple[Callable[..., Any], ListenerConfig]]:
         """
         Get all registered listeners and their configurations.
 

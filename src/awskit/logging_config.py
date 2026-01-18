@@ -6,6 +6,7 @@ processor setup, output formatting, and pytest compatibility.
 """
 
 import logging
+
 import structlog
 
 

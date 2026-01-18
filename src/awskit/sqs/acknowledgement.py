@@ -6,13 +6,14 @@ message acknowledgement (deletion) with support for batching to reduce
 API calls to SQS.
 """
 
-import structlog
 import threading
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from queue import Queue
-from typing import Any, Deque, Dict, List, Optional
+from typing import Any, Optional
+
+import structlog
 
 from awskit.config import AcknowledgementConfig, AcknowledgementOrdering
 
@@ -61,7 +62,7 @@ class AcknowledgementProcessor:
         self._lock = threading.Lock()
 
         # For ordered acknowledgement (FIFO queues)
-        self._ordered_queues: Dict[str, Deque[str]] = defaultdict(deque)
+        self._ordered_queues: dict[str, deque[str]] = defaultdict(deque)
 
         # Start background worker if batching is enabled
         if self.config.interval_seconds > 0 or self.config.threshold > 0:
@@ -103,7 +104,7 @@ class AcknowledgementProcessor:
             )
             self._ack_queue.put(request)
 
-    def acknowledge_batch(self, queue_url: str, receipt_handles: List[str]) -> None:
+    def acknowledge_batch(self, queue_url: str, receipt_handles: list[str]) -> None:
         """
         Acknowledge multiple messages immediately.
 
@@ -136,7 +137,7 @@ class AcknowledgementProcessor:
                         handles.clear()
 
         # Process regular queue
-        pending: Dict[str, List[str]] = defaultdict(list)
+        pending: dict[str, list[str]] = defaultdict(list)
         while not self._ack_queue.empty():
             try:
                 request = self._ack_queue.get_nowait()
@@ -179,7 +180,7 @@ class AcknowledgementProcessor:
         This method runs in a separate thread and processes acknowledgements
         based on the configured interval and threshold.
         """
-        pending: Dict[str, List[str]] = defaultdict(list)
+        pending: dict[str, list[str]] = defaultdict(list)
         last_flush_time = time.time()
 
         while not self._shutdown_event.is_set():
@@ -269,7 +270,7 @@ class AcknowledgementProcessor:
                 exc_info=True,
             )
 
-    def _delete_messages_batch(self, queue_url: str, receipt_handles: List[str]) -> None:
+    def _delete_messages_batch(self, queue_url: str, receipt_handles: list[str]) -> None:
         """
         Delete multiple messages from the queue in a batch.
 

@@ -2,18 +2,17 @@
 Tests for listener registry and decorator functionality.
 """
 
-from typing import List
 
 import pytest
 
-from awskit.sqs import (
-    ListenerRegistry,
-    sqs_listener,
-)
 from awskit.config import (
     AcknowledgementMode,
     FifoGroupStrategy,
     ListenerConfig,
+)
+from awskit.sqs import (
+    ListenerRegistry,
+    sqs_listener,
 )
 from awskit.sqs.models import Acknowledgement
 
@@ -162,7 +161,7 @@ class TestSqsListenerDecorator:
         """Test decorator with batch mode enabled."""
 
         @sqs_listener("test-queue", batch=True)
-        def my_listener(messages: List[str]):
+        def my_listener(messages: list[str]):
             pass
 
         config = ListenerRegistry.get_listener_config(my_listener)
@@ -204,7 +203,7 @@ class TestSqsListenerDecorator:
             visibility_timeout=120,
             message_group_strategy=FifoGroupStrategy.MIXED_GROUPS_IN_BATCH,
         )
-        def my_listener(messages: List[dict]):
+        def my_listener(messages: list[dict]):
             pass
 
         config = ListenerRegistry.get_listener_config(my_listener)
@@ -239,7 +238,7 @@ class TestSqsListenerDecorator:
         assert hasattr(my_listener, "__sqs_type_hints__")
         type_hints = my_listener.__sqs_type_hints__
         assert "message" in type_hints
-        assert type_hints["message"] == dict
+        assert type_hints["message"] is dict
 
     def test_decorator_extracts_signature(self):
         """Test that decorator extracts function signature."""
@@ -266,14 +265,14 @@ class TestSqsListenerDecorator:
             pass
 
         @sqs_listener("queue3", batch=True)
-        def listener3(messages: List[str]):
+        def listener3(messages: list[str]):
             pass
 
         listeners = ListenerRegistry.get_listeners()
         assert len(listeners) == 3
 
         # Verify each listener has correct configuration
-        configs = {func: config for func, config in listeners}
+        configs = dict(listeners)
         assert configs[listener1].queue == "queue1"
         assert configs[listener2].queue == "queue2"
         assert configs[listener2].max_concurrent_messages == 5

@@ -6,9 +6,9 @@ and concurrent message processing based on message availability and processing
 capacity.
 """
 
-import structlog
 from threading import Semaphore
-from typing import Dict
+
+import structlog
 
 from awskit.config import BackpressureMode, ListenerConfig
 
@@ -37,8 +37,8 @@ class BackpressureManager:
             mode: The backpressure mode to use
         """
         self.mode = mode
-        self._high_throughput_mode: Dict[str, bool] = {}
-        self._semaphores: Dict[str, Semaphore] = {}
+        self._high_throughput_mode: dict[str, bool] = {}
+        self._semaphores: dict[str, Semaphore] = {}
 
     def should_poll(self, queue_url: str, config: ListenerConfig) -> bool:
         """
@@ -136,7 +136,7 @@ class BackpressureManager:
         """
         if self.mode == BackpressureMode.AUTO and count > 0:
             # Switch to high-throughput mode when messages are available
-            was_high_throughput = self._high_throughput_mode.get(queue_url, False)
+            self._high_throughput_mode.get(queue_url, False)
             self._high_throughput_mode[queue_url] = True
 
     def on_empty_poll(self, queue_url: str) -> None:
@@ -151,7 +151,7 @@ class BackpressureManager:
         """
         if self.mode == BackpressureMode.AUTO:
             # Switch to low-throughput mode when no messages are available
-            was_high_throughput = self._high_throughput_mode.get(queue_url, False)
+            self._high_throughput_mode.get(queue_url, False)
             self._high_throughput_mode[queue_url] = False
         if self.mode == BackpressureMode.AUTO:
             # Switch to low-throughput mode when no messages are available

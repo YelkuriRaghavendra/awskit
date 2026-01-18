@@ -6,7 +6,7 @@ messages, send results, and acknowledgement handles.
 """
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from awskit.sqs.acknowledgement import AcknowledgementProcessor
@@ -29,8 +29,8 @@ class Message:
     message_id: str
     receipt_handle: str
     body: Any
-    attributes: Dict[str, Any]
-    message_attributes: Dict[str, Any]
+    attributes: dict[str, Any]
+    message_attributes: dict[str, Any]
     queue_url: str
 
 
@@ -76,8 +76,8 @@ class BatchSendResult:
         failed: List of failed message sends with error details
     """
 
-    successful: List[SendResult]
-    failed: List[SendFailure]
+    successful: list[SendResult]
+    failed: list[SendFailure]
 
 
 @dataclass

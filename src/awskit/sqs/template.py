@@ -5,10 +5,11 @@ This module provides the high-level SqsTemplate class for interacting with
 SQS queues, including sending messages, batch sending, and receiving messages.
 """
 
-import structlog
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
-from awskit.config import QueueNotFoundStrategy, SendBatchFailureStrategy, TemplateConfig
+import structlog
+
+from awskit.config import SendBatchFailureStrategy, TemplateConfig
 from awskit.converter import MessageConverter
 from awskit.exceptions import QueueNotFoundError, SerializationError
 from awskit.sqs.models import BatchSendResult, Message, SendFailure, SendResult
@@ -46,7 +47,7 @@ class SqsTemplate:
         self.client = client
         self.converter = converter
         self.config = config or TemplateConfig()
-        self._queue_url_cache: Dict[str, str] = {}
+        self._queue_url_cache: dict[str, str] = {}
 
     def _resolve_queue_url(self, queue: str) -> str:
         """
@@ -71,8 +72,8 @@ class SqsTemplate:
             queue_url: str = response["QueueUrl"]
             self._queue_url_cache[queue] = queue_url
             return queue_url
-        except self.client.exceptions.QueueDoesNotExist:
-            raise QueueNotFoundError(f"Queue not found: {queue}")
+        except self.client.exceptions.QueueDoesNotExist as e:
+            raise QueueNotFoundError(f"Queue not found: {queue}") from e
 
     def send(
         self,
@@ -80,7 +81,7 @@ class SqsTemplate:
         payload: Any,
         *,
         delay_seconds: int = 0,
-        message_attributes: Optional[Dict[str, Any]] = None,
+        message_attributes: Optional[dict[str, Any]] = None,
         message_group_id: Optional[str] = None,
         deduplication_id: Optional[str] = None,
     ) -> SendResult:
@@ -110,7 +111,7 @@ class SqsTemplate:
             raise ValueError(f"message_group_id is required for FIFO queue: {queue}")
         body, type_attrs = self.converter.serialize(payload)
         attrs = self._build_message_attributes(type_attrs, message_attributes)
-        send_params: Dict[str, Any] = {
+        send_params: dict[str, Any] = {
             "QueueUrl": queue_url,
             "MessageBody": body,
         }
@@ -143,9 +144,9 @@ class SqsTemplate:
 
     def _build_message_attributes(
         self,
-        type_attrs: Dict[str, Any],
-        custom_attrs: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        type_attrs: dict[str, Any],
+        custom_attrs: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         """
         Build SQS message attributes from type info and custom attributes.
 
@@ -156,7 +157,7 @@ class SqsTemplate:
         Returns:
             Dictionary of SQS message attributes
         """
-        attrs: Dict[str, Any] = {}
+        attrs: dict[str, Any] = {}
         for key, value in type_attrs.items():
             attrs[key] = {"DataType": "String", "StringValue": str(value)}
         if custom_attrs:
@@ -174,7 +175,7 @@ class SqsTemplate:
     def send_batch(
         self,
         queue: str,
-        payloads: List[Any],
+        payloads: list[Any],
         **kwargs: Any,
     ) -> BatchSendResult:
         """
@@ -215,7 +216,7 @@ class SqsTemplate:
             attrs = self._build_message_attributes(type_attrs, kwargs.get("message_attributes"))
 
             # Build entry
-            entry: Dict[str, Any] = {
+            entry: dict[str, Any] = {
                 "Id": str(i),
                 "MessageBody": body,
             }
@@ -303,7 +304,7 @@ class SqsTemplate:
         max_messages: int = 1,
         wait_time_seconds: int = 0,
         visibility_timeout: Optional[int] = None,
-    ) -> List[Message]:
+    ) -> list[Message]:
         """
         Receive messages from a queue (for testing/manual use).
 
@@ -320,7 +321,7 @@ class SqsTemplate:
             QueueNotFoundError: If queue doesn't exist and strategy is FAIL
         """
         queue_url = self._resolve_queue_url(queue)
-        receive_params: Dict[str, Any] = {
+        receive_params: dict[str, Any] = {
             "QueueUrl": queue_url,
             "MaxNumberOfMessages": max_messages,
             "WaitTimeSeconds": wait_time_seconds,

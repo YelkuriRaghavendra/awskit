@@ -4,7 +4,7 @@ Unit tests for message converters.
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import pytest
 
@@ -18,8 +18,8 @@ class TestMessage:
 
     id: int
     name: str
-    tags: List[str]
-    metadata: Optional[Dict[str, Any]] = None
+    tags: list[str]
+    metadata: Optional[dict[str, Any]] = None
 
 
 class TestJsonMessageConverter:
@@ -70,7 +70,7 @@ class TestJsonMessageConverter:
 
     def test_serialize_empty_list(self) -> None:
         """Test serializing an empty list."""
-        payload: List[str] = []
+        payload: list[str] = []
         body, type_attrs = self.converter.serialize(payload)
 
         assert json.loads(body) == []
@@ -78,7 +78,7 @@ class TestJsonMessageConverter:
 
     def test_serialize_empty_dict(self) -> None:
         """Test serializing an empty dictionary."""
-        payload: Dict[str, Any] = {}
+        payload: dict[str, Any] = {}
         body, type_attrs = self.converter.serialize(payload)
 
         assert json.loads(body) == {}
@@ -175,13 +175,13 @@ class TestJsonMessageConverter:
     def test_round_trip_empty_collections(self) -> None:
         """Test round-trip serialization of empty collections."""
         # Empty list
-        empty_list: List[str] = []
+        empty_list: list[str] = []
         body, type_attrs = self.converter.serialize(empty_list)
         result = self.converter.deserialize(body, type_attrs, list)
         assert result == []
 
         # Empty dict
-        empty_dict: Dict[str, Any] = {}
+        empty_dict: dict[str, Any] = {}
         body, type_attrs = self.converter.serialize(empty_dict)
         result = self.converter.deserialize(body, type_attrs, dict)
         assert result == {}

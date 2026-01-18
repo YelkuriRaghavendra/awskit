@@ -21,67 +21,61 @@ try:
 except Exception:
     __version__ = "0.0.1"
 
-# Configure structlog before any other imports
-from awskit.logging_config import configure_structlog
-
-configure_structlog()
-
-# Convenience imports for SQS (most common use case)
-from awskit.sqs import (
-    sqs_listener,
-    start_listeners,
-    stop_listeners,
-    get_listener_context,
-    SqsTemplate,
-    Message,
-    SendResult,
-    BatchSendResult,
-    MessageListenerContainer,
-    AcknowledgementProcessor,
-    BackpressureManager,
-    ListenerRegistry,
-    SendFailure,
-)
-
-# Core shared modules
 from awskit.config import (
+    AcknowledgementConfig,
     AcknowledgementMode,
     AcknowledgementOrdering,
     BackpressureMode,
+    ContainerConfig,
     FifoGroupStrategy,
+    ListenerConfig,
     QueueNotFoundStrategy,
     SendBatchFailureStrategy,
     SqsConfig,
     TemplateConfig,
-    ListenerConfig,
-    ContainerConfig,
-    AcknowledgementConfig,
     load_config_from_env,
 )
 from awskit.converter import JsonMessageConverter, MessageConverter
 from awskit.exceptions import (
-    SqsIntegrationError,
     ConfigurationError,
-    QueueNotFoundError,
-    SerializationError,
     DeserializationError,
     ListenerError,
+    QueueNotFoundError,
+    SerializationError,
+    SqsIntegrationError,
 )
+from awskit.logging_config import configure_structlog
 from awskit.metrics import (
-    MetricsCollector,
-    InMemoryMetricsCollector,
-    NoOpMetricsCollector,
     CallbackMetricsCollector,
+    InMemoryMetricsCollector,
+    LifecycleEvent,
+    MetricCounts,
+    MetricsCollector,
+    MonitoringCallback,
+    NoOpMetricsCollector,
     PrometheusMetricsCollector,
     StatsDMetricsCollector,
-    MetricCounts,
-    LifecycleEvent,
-    MonitoringCallback,
 )
+from awskit.sqs import (
+    AcknowledgementProcessor,
+    BackpressureManager,
+    BatchSendResult,
+    ListenerRegistry,
+    Message,
+    MessageListenerContainer,
+    SendFailure,
+    SendResult,
+    SqsTemplate,
+    get_listener_context,
+    sqs_listener,
+    start_listeners,
+    stop_listeners,
+)
+
+configure_structlog()
 
 __all__ = [
     "__version__",
-    # SQS - Main API
     "sqs_listener",
     "start_listeners",
     "stop_listeners",
@@ -95,7 +89,6 @@ __all__ = [
     "AcknowledgementProcessor",
     "BackpressureManager",
     "ListenerRegistry",
-    # Configuration
     "SqsConfig",
     "TemplateConfig",
     "ListenerConfig",
@@ -108,17 +101,14 @@ __all__ = [
     "QueueNotFoundStrategy",
     "SendBatchFailureStrategy",
     "load_config_from_env",
-    # Converters
     "MessageConverter",
     "JsonMessageConverter",
-    # Exceptions
     "SqsIntegrationError",
     "ConfigurationError",
     "QueueNotFoundError",
     "SerializationError",
     "DeserializationError",
     "ListenerError",
-    # Metrics
     "MetricsCollector",
     "InMemoryMetricsCollector",
     "NoOpMetricsCollector",

@@ -9,7 +9,7 @@ listener settings, container settings, and acknowledgement settings.
 import os
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, Optional, Type, TypeVar, get_type_hints
+from typing import Any, Callable, Optional, TypeVar, get_type_hints
 
 from awskit.exceptions import ConfigurationError
 
@@ -139,7 +139,7 @@ class ListenerConfig:
     batch: bool = False
     visibility_timeout: Optional[int] = None
     message_group_strategy: Optional[FifoGroupStrategy] = None
-    error_handler: Optional[Callable[[Exception, Any, Dict[str, Any]], None]] = None
+    error_handler: Optional[Callable[[Exception, Any, dict[str, Any]], None]] = None
 
 
 @dataclass
@@ -225,7 +225,7 @@ class SqsConfig:
 T = TypeVar("T")
 
 
-def _parse_value(value: str, target_type: Type[Any]) -> Any:
+def _parse_value(value: str, target_type: type[Any]) -> Any:
     """
     Parse a string value to the target type.
 
@@ -244,27 +244,27 @@ def _parse_value(value: str, target_type: Type[Any]) -> Any:
         return None
 
     # Handle bool
-    if target_type == bool:
+    if target_type is bool:
         if value.lower() in ("true", "1", "yes", "on"):
             return True
         elif value.lower() in ("false", "0", "no", "off"):
             return False
         else:
-            raise ConfigurationError(f"Invalid boolean value: {value}")
+            raise ConfigurationError(f"Invalid boolean value: {value}") from None
 
     # Handle int
-    if target_type == int:
+    if target_type is int:
         try:
             return int(value)
-        except ValueError:
-            raise ConfigurationError(f"Invalid integer value: {value}")
+        except ValueError as e:
+            raise ConfigurationError(f"Invalid integer value: {value}") from e
 
     # Handle float
-    if target_type == float:
+    if target_type is float:
         try:
             return float(value)
-        except ValueError:
-            raise ConfigurationError(f"Invalid float value: {value}")
+        except ValueError as e:
+            raise ConfigurationError(f"Invalid float value: {value}") from e
 
     # Handle Enum types
     if isinstance(target_type, type) and issubclass(target_type, Enum):
@@ -275,18 +275,18 @@ def _parse_value(value: str, target_type: Type[Any]) -> Any:
             # Try by name
             try:
                 return target_type[value.upper()]
-            except KeyError:
+            except KeyError as e:
                 valid_values = [e.value for e in target_type]
                 raise ConfigurationError(
                     f"Invalid {target_type.__name__} value: {value}. "
                     f"Valid values: {', '.join(valid_values)}"
-                )
+                ) from e
 
     # Handle str (default)
     return value
 
 
-def _load_nested_config(prefix: str, config_class: Type[T], env_vars: Dict[str, str]) -> T:
+def _load_nested_config(prefix: str, config_class: type[T], env_vars: dict[str, str]) -> T:
     """
     Load a nested configuration object from environment variables.
 
@@ -299,7 +299,7 @@ def _load_nested_config(prefix: str, config_class: Type[T], env_vars: Dict[str, 
         Instance of config_class with values from environment variables
     """
     type_hints = get_type_hints(config_class)
-    kwargs: Dict[str, Any] = {}
+    kwargs: dict[str, Any] = {}
 
     for field_name, field_type in type_hints.items():
         # Convert field_name to uppercase with underscores
@@ -309,7 +309,7 @@ def _load_nested_config(prefix: str, config_class: Type[T], env_vars: Dict[str, 
             try:
                 kwargs[field_name] = _parse_value(env_vars[env_key], field_type)
             except ConfigurationError as e:
-                raise ConfigurationError(f"Error parsing {env_key}: {e}")
+                raise ConfigurationError(f"Error parsing {env_key}: {e}") from e
 
     return config_class(**kwargs)
 
@@ -346,7 +346,7 @@ def load_config_from_env(prefix: str = "SQS") -> SqsConfig:
     env_vars = dict(os.environ)
 
     # Load root-level fields
-    root_kwargs: Dict[str, Any] = {}
+    root_kwargs: dict[str, Any] = {}
     root_type_hints = get_type_hints(SqsConfig)
 
     for field_name, field_type in root_type_hints.items():
@@ -360,7 +360,7 @@ def load_config_from_env(prefix: str = "SQS") -> SqsConfig:
             try:
                 root_kwargs[field_name] = _parse_value(env_vars[env_key], field_type)
             except ConfigurationError as e:
-                raise ConfigurationError(f"Error parsing {env_key}: {e}")
+                raise ConfigurationError(f"Error parsing {env_key}: {e}") from e
 
     # Load nested configurations
     template_prefix = f"{prefix}_TEMPLATE"

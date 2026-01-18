@@ -11,8 +11,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from awskit.sqs.acknowledgement import AcknowledgementProcessor
-from awskit.sqs.backpressure import BackpressureManager
 from awskit.config import (
     AcknowledgementConfig,
     AcknowledgementMode,
@@ -21,8 +19,11 @@ from awskit.config import (
     ListenerConfig,
     TemplateConfig,
 )
-from awskit.sqs.container import MessageListenerContainer
 from awskit.converter import JsonMessageConverter
+from awskit.exceptions import DeserializationError
+from awskit.sqs.acknowledgement import AcknowledgementProcessor
+from awskit.sqs.backpressure import BackpressureManager
+from awskit.sqs.container import MessageListenerContainer
 from awskit.sqs.registry import ListenerRegistry
 from awskit.sqs.template import SqsTemplate
 
@@ -171,7 +172,7 @@ class TestStructuredLogging:
         backpressure = BackpressureManager(BackpressureMode.AUTO)
 
         with caplog.at_level(logging.INFO):
-            container = MessageListenerContainer(
+            MessageListenerContainer(
                 self.client,
                 self.converter,
                 ack_processor,
@@ -253,7 +254,7 @@ class TestStructuredLogging:
         type_info = {}
 
         with caplog.at_level(logging.ERROR):
-            with pytest.raises(Exception):
+            with pytest.raises(DeserializationError):
                 converter.deserialize(invalid_body, type_info, dict)
 
         # Check that error was logged with context
