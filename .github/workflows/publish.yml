@@ -83,7 +83,7 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.event_name == 'release' ||
-      github.event_name == 'push' ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||
       (github.event_name == 'workflow_dispatch' && 
        github.event.inputs.environment == 'pypi')
     environment:
