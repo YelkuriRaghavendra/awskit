@@ -729,6 +729,15 @@ class MessageListenerContainer:
         if params and params[0] == "self":
             params = params[1:]
 
+        # Get type hints for parameter injection
+        if hasattr(listener_func, "__sqs_type_hints__"):
+            type_hints = listener_func.__sqs_type_hints__
+        else:
+            try:
+                type_hints = get_type_hints(listener_func)
+            except Exception:
+                type_hints = {}
+
         # Prepare arguments
         args = []
 
@@ -736,19 +745,23 @@ class MessageListenerContainer:
         if params:
             args.append(message.body)
 
-        # Check if listener expects an Acknowledgement handle
-        needs_ack_handle = (
-            len(params) > 1 and config.acknowledgement_mode == AcknowledgementMode.MANUAL
-        )
-
-        if needs_ack_handle:
-            # Create acknowledgement handle
-            ack_handle = Acknowledgement(
-                queue_url=message.queue_url,
-                receipt_handle=message.receipt_handle,
-                processor=self.acknowledgement_processor,
-            )
-            args.append(ack_handle)
+        # Inject additional parameters based on type hints
+        for param_name in params[1:]:
+            param_type = type_hints.get(param_name)
+            if param_type is Message:
+                # Inject the full Message object (provides access to message_attributes, etc.)
+                args.append(message)
+            elif config.acknowledgement_mode == AcknowledgementMode.MANUAL and (
+                param_type is Acknowledgement or param_type is None
+            ):
+                # Inject acknowledgement handle in MANUAL mode.
+                # Supports explicit Acknowledgement type hint or untyped param (backward compat).
+                ack_handle = Acknowledgement(
+                    queue_url=message.queue_url,
+                    receipt_handle=message.receipt_handle,
+                    processor=self.acknowledgement_processor,
+                )
+                args.append(ack_handle)
 
         # Invoke listener and handle exceptions
         success = False

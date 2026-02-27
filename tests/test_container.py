@@ -613,3 +613,102 @@ class TestMessageListenerContainer:
         ack_processor.acknowledge.assert_called_once_with(
             "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue", "test-receipt-1"
         )
+
+    def test_listener_receives_message_object_when_type_hinted(self):
+        """Test that a listener parameter typed as Message receives the full Message object."""
+        client = MagicMock()
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
+
+        from awskit.sqs.models import Message
+
+        received_messages = []
+
+        @sqs_listener("test-queue")
+        def my_listener(body: dict, msg: Message):
+            received_messages.append(msg)
+
+        converter = JsonMessageConverter()
+        ack_processor = MagicMock(spec=AcknowledgementProcessor)
+        backpressure = BackpressureManager(BackpressureMode.AUTO)
+
+        container = MessageListenerContainer(
+            client=client,
+            converter=converter,
+            acknowledgement_processor=ack_processor,
+            backpressure_manager=backpressure,
+        )
+
+        message = Message(
+            message_id="test-msg-1",
+            receipt_handle="test-receipt-1",
+            body={"test": "data"},
+            attributes={"ApproximateReceiveCount": "1"},
+            message_attributes={"source": {"DataType": "String", "StringValue": "orders"}},
+            queue_url="https://sqs.us-east-1.amazonaws.com/123456789012/test-queue",
+        )
+
+        listener_func, listener_config = container._listeners[
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        ][0]
+
+        container._invoke_listener(listener_func, message, listener_config)
+
+        assert len(received_messages) == 1
+        assert received_messages[0] is message
+        assert received_messages[0].message_attributes == {
+            "source": {"DataType": "String", "StringValue": "orders"}
+        }
+
+    def test_listener_receives_message_and_ack_in_manual_mode(self):
+        """Test body + Message + Acknowledgement all injected in MANUAL mode."""
+        client = MagicMock()
+        client.get_queue_url.return_value = {
+            "QueueUrl": "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        }
+
+        from awskit.sqs.models import Acknowledgement, Message
+
+        received = []
+
+        @sqs_listener("test-queue", acknowledgement_mode=AcknowledgementMode.MANUAL)
+        def my_listener(body: dict, msg: Message, ack: Acknowledgement):
+            received.append((body, msg, ack))
+
+        converter = JsonMessageConverter()
+        ack_processor = MagicMock(spec=AcknowledgementProcessor)
+        backpressure = BackpressureManager(BackpressureMode.AUTO)
+
+        container = MessageListenerContainer(
+            client=client,
+            converter=converter,
+            acknowledgement_processor=ack_processor,
+            backpressure_manager=backpressure,
+        )
+
+        message = Message(
+            message_id="test-msg-2",
+            receipt_handle="test-receipt-2",
+            body={"value": 42},
+            attributes={},
+            message_attributes={"correlation-id": {"DataType": "String", "StringValue": "abc"}},
+            queue_url="https://sqs.us-east-1.amazonaws.com/123456789012/test-queue",
+        )
+
+        listener_func, listener_config = container._listeners[
+            "https://sqs.us-east-1.amazonaws.com/123456789012/test-queue"
+        ][0]
+
+        container._invoke_listener(listener_func, message, listener_config)
+
+        assert len(received) == 1
+        body, msg, ack = received[0]
+        assert body == {"value": 42}
+        assert msg is message
+        assert msg.message_attributes == {
+            "correlation-id": {"DataType": "String", "StringValue": "abc"}
+        }
+        assert isinstance(ack, Acknowledgement)
+        # Auto-acknowledge not called (MANUAL mode, listener didn't call ack.acknowledge())
+        ack_processor.acknowledge.assert_not_called()
